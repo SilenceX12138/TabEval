@@ -11,15 +11,21 @@ classifiers = [
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.10",
 ]
-description = "A Python project framework for managing dual-repository workflows with automated release management and development tools"
-keywords = ["framework", "template", "repository", "automation", "development"]
+description = "A comprehensive Python framework for evaluating synthetic tabular data generation methods"
+keywords = [
+  "synthetic data",
+  "tabular data",
+  "evaluation framework",
+  "data generation",
+]
 license = {file = "LICENSE"}
 name = "tabeval"
 readme = "README.md"
 requires-python = ">=3.10"
-version = "2025.07.23"
+version = "2025.08.08"
 
 dependencies = [
+  "hatchling",
   "pytest",
   "flake8",
   "pylint",
@@ -29,7 +35,43 @@ dependencies = [
   "sphinx-rtd-theme",
   "sphinx-book-theme",
   "ipykernel",
+  "importlib-metadata",
+  "pandas",
+  "torch",
+  "scikit-learn",
+  "nflows",
+  "numpy",
+  "lifelines",
+  "opacus",
+  "networkx",
+  "decaf-synthetic-data",
+  "optuna",
+  "shap",
+  "tenacity",
+  "tqdm",
+  "loguru",
+  "pydantic",
+  "cloudpickle",
+  "scipy",
+  "xgboost",
+  "geomloss",
+  "pgmpy",
+  "redis",
+  "pycox",
+  "xgbse",
+  "pykeops",
+  "fflows",
+  "monai",
+  "tsai",
+  "be-great",
+  "arfpy",
+  "build",
 ]
 
 [project.optional-dependencies]
-dev = []
+all = [
+  "dgl",
+  "torch_geometric",
+  "torch_sparse",
+  "torch_scatter",
+]
