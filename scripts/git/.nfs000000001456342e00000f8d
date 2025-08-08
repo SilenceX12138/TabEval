@@ -76,7 +76,7 @@ git tag $release_tag HEAD
 
 git checkout -b $release_branch public/master
 git pull public master
-git diff $release_branch master >./release.patch
+git diff --binary $release_branch master >./release.patch
 git apply ./release.patch --allow-empty
 rm ./release.patch
 git add .
