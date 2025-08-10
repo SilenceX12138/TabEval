@@ -59,7 +59,7 @@ class TabularARF(metaclass=ABCMeta):
 
         Args:
             # ARF parameters
-            X (pd.DataFrame): Reference dataset, used for training the tabular encoder? # TODO: check if this is needed? Delete?
+            X (pd.DataFrame): Reference dataset, used for training the tabular encoder?
             num_trees (int, optional): Number of trees to grow in each forest. Defaults to 30
             delta (int, optional): Tolerance parameter. Algorithm converges when OOB accuracy is < 0.5 + `delta`. Defaults to 0.
             max_iters (int, optional): Maximum iterations for the adversarial loop. Defaults to 10.
@@ -143,8 +143,6 @@ class TabularARF(metaclass=ABCMeta):
             samples = self.model.forge(n=count)
             return pd.DataFrame(samples)
         except Exception as e:
-            log.critical(
-                f"Failed due to error: {e} Try with a higher values of min_node_size."
-            )
+            log.critical(f"Failed due to error: {e} Try with a higher values of min_node_size.")
         samples = self.model.forge(n=count)
         return pd.DataFrame(samples)

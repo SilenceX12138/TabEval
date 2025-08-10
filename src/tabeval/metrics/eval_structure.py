@@ -2,7 +2,6 @@
 import hashlib
 import os
 import platform
-import random
 import time
 from abc import abstractmethod
 from typing import Any, Dict
@@ -13,10 +12,7 @@ import pandas as pd
 from autogluon.core.models import AbstractModel
 from autogluon.features.generators import LabelEncoderFeatureGenerator
 from autogluon.tabular import TabularPredictor
-from autogluon.tabular.configs.hyperparameter_configs import get_hyperparameter_config
-from pgmpy.estimators.CITests import chi_square, pearsonr, pillai_trace
 from pydantic import validate_arguments
-from sklearn.metrics import balanced_accuracy_score, roc_auc_score
 
 # tabeval absolute
 from tabeval.metrics.core import MetricEvaluator
@@ -117,131 +113,6 @@ class StructureEvaluator(MetricEvaluator):
             return f"{class_name}:{obj_str}"
 
 
-class CITest(StructureEvaluator):
-    """
-    .. inheritance-diagram:: tabeval.metrics.eval_structure.CITest
-        :parts: 1
-
-    Compute the AUROC of binary CI detection task.
-
-    Args:
-        X: original data
-        X_syn: synthetically generated data
-
-    Returns:
-        results: dict
-    """
-
-    def __init__(
-        self,
-        **kwargs: Any,
-    ) -> None:
-        super().__init__(default_metric="score", **kwargs)
-
-    @staticmethod
-    def name() -> str:
-        return "CI_test"
-
-    @staticmethod
-    def direction() -> str:
-        return "maximize"
-
-    def timestamp(self):
-        return "2025-04-04"
-
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
-    def _evaluate(
-        self,
-        X: DataLoader,
-        X_syn: DataLoader,
-        column_list: list,  # list of column names (the last one is default to be the target)
-        dependency_dict: dict,  # GT dependency dictionary
-        test_method: str,  # CI test method
-        significance_level: float = 0.05,  # Significance level
-        max_ratio_ci_test: float = 1,  # Maximum ratio of CI relationships to test
-    ) -> Dict:
-        # === Prepare the GT dependency ===
-        ci_list = dependency_dict["conditional_independent_set"]
-        cd_list = dependency_dict["conditional_dependent_set"]
-        ci_list_sampled = random.sample(ci_list, int(max_ratio_ci_test * len(ci_list)))
-        cd_list_sampled = random.sample(cd_list, int(max_ratio_ci_test * len(cd_list)))
-        dependency_list = ci_list_sampled + cd_list_sampled
-
-        # === Highlight the local structure w.r.t. each feature ===
-        target2local_structure_index = {col: set() for col in column_list}
-        for i, dependency in enumerate(dependency_list):
-            X, Y, S = dependency
-            target2local_structure_index[X].add(i)
-            target2local_structure_index[Y].add(i)
-            for col in S:
-                target2local_structure_index[col].add(i)
-
-        # === Evaluate the CI (y=1) and CD (y=0) on synthetic data ===
-        X_syn_df = pd.DataFrame(X_syn.data, columns=column_list)
-        y_gt = [1] * len(ci_list_sampled) + [0] * len(cd_list_sampled)
-        y_pred = []
-        for dependency in dependency_list:
-            X, Y, S = dependency
-            match test_method:
-                case "pillai":
-                    # Condition on all other features
-                    _, p_value = pillai_trace(X, Y, S, X_syn_df, boolean=False)
-                case "chi_square":
-                    _, p_value, _ = chi_square(X, Y, S, X_syn_df, boolean=False)
-                case "pearsonr":
-                    _, p_value = pearsonr(X, Y, S, X_syn_df, boolean=False)
-            # If p-value is smaller than or equal to significance level, it means the two features are dependent
-            # And thus we should have an edge between them
-            if p_value <= significance_level:
-                y_pred.append(0)
-            else:
-                y_pred.append(1)
-
-        # === Compute the global score ===
-        auroc_global = roc_auc_score(y_gt, y_pred, average="weighted")
-        balanced_accuracy_global = balanced_accuracy_score(y_gt, y_pred)
-
-        # === Compute the local score ===
-        auroc_local_dict = {
-            col: [
-                (
-                    roc_auc_score(
-                        np.array(y_gt)[list(target2local_structure_index[col])],
-                        np.array(y_pred)[list(target2local_structure_index[col])],
-                        average="weighted",
-                    )
-                    if len(target2local_structure_index[col]) > 0
-                    else 1  # For some columns, the local structure is empty (no conditional independence/dependence relationships)
-                )
-            ]
-            for col in column_list
-        }
-        balanced_accuracy_local_dict = {
-            col: [
-                (
-                    balanced_accuracy_score(
-                        np.array(y_gt)[list(target2local_structure_index[col])],
-                        np.array(y_pred)[list(target2local_structure_index[col])],
-                    )
-                    if len(target2local_structure_index[col]) > 0
-                    else 1
-                )
-            ]
-            for col in column_list
-        }
-        auroc_local_mean = np.mean(list(auroc_local_dict.values()))
-        balanced_accuracy_local_mean = np.mean(list(balanced_accuracy_local_dict.values()))
-
-        return {
-            "auroc_global": auroc_global,
-            "balanced_accuracy_global": balanced_accuracy_global,
-            "auroc_local_mean": auroc_local_mean,
-            "balanced_accuracy_local_mean": balanced_accuracy_local_mean,
-            "auroc_local": auroc_local_dict,
-            "balanced_accuracy_local": balanced_accuracy_local_dict,
-        }
-
-
 class UtilityPerFeature(StructureEvaluator):
     """
     .. inheritance-diagram:: tabeval.metrics.eval_structure.UtilityPerFeature
@@ -269,7 +140,7 @@ class UtilityPerFeature(StructureEvaluator):
         return "maximize"
 
     def timestamp(self):
-        return "2025-04-09"
+        return "2025-08-09"
 
     @validate_arguments(config=dict(arbitrary_types_allowed=True))
     def _evaluate(
@@ -285,14 +156,8 @@ class UtilityPerFeature(StructureEvaluator):
 
         # === Prepare predictors ===
         # Only keep some default models
-        custom_hyperparameters = get_hyperparameter_config("very_light")
-        included_model_list = [
-            # "NN_TORCH",
-            "XGB",
-        ]
-        custom_hyperparameters = {k: v for k, v in custom_hyperparameters.items() if k in included_model_list}
-        # Add other models
-        # custom_hyperparameters["LR"] = {}
+        custom_hyperparameters = {}
+        custom_hyperparameters["XGB"] = {}
         custom_hyperparameters["KNN"] = {}
         custom_hyperparameters[CustomTabPFNModel] = {}
 

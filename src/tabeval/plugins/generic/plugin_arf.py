@@ -120,9 +120,7 @@ class ARFPlugin(Plugin):
     def hyperparameter_space(**kwargs: Any) -> List[Distribution]:
         return [
             IntegerDistribution(name="num_trees", low=10, high=100, step=10),
-            IntegerDistribution(
-                name="delta", low=0, high=50, step=2
-            ),  # TODO: check if this is the right range
+            IntegerDistribution(name="delta", low=0, high=50, step=2),
             IntegerDistribution(name="max_iters", low=1, high=5, step=1),
             CategoricalDistribution(name="early_stop", choices=[True, False]),
             IntegerDistribution(name="min_node_size", low=2, high=20, step=2),

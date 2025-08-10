@@ -14,7 +14,6 @@ unloadable_plugins: List[str] = [
 ]
 
 
-# TODO: simplify this function back to just cloudpickle.dumps(model), if possible (i.e. if the DPOptimizer is not needed or becomes loadable with cloudpickle)
 def save(custom_model: Any) -> bytes:
     """
     Serialize a custom model object that may or may not contain a PyTorch model with a privacy engine.
@@ -43,9 +42,7 @@ def save(custom_model: Any) -> bytes:
     }
 
     # Save the state of the custom model object (excluding the PyTorch model and optimizer)
-    custom_model_state = {
-        key: value for key, value in custom_model.__dict__.items() if key != "model"
-    }
+    custom_model_state = {key: value for key, value in custom_model.__dict__.items() if key != "model"}
     checkpoint["custom_model_state"] = cloudpickle.dumps(custom_model_state)
 
     # Check if the custom model contains a PyTorch model
@@ -56,9 +53,7 @@ def save(custom_model: Any) -> bytes:
     # If a PyTorch model is found, check if it's using Opacus for DP
     if pytorch_model:
         checkpoint["pytorch_model_state"] = pytorch_model.state_dict()
-        if hasattr(pytorch_model, "privacy_engine") and isinstance(
-            pytorch_model.privacy_engine, PrivacyEngine
-        ):
+        if hasattr(pytorch_model, "privacy_engine") and isinstance(pytorch_model.privacy_engine, PrivacyEngine):
             # Handle DP Optimizer
             optimizer = pytorch_model.privacy_engine.optimizer
 
@@ -75,7 +70,6 @@ def save(custom_model: Any) -> bytes:
     return cloudpickle.dumps(checkpoint)
 
 
-# TODO: simplify this function back to just cloudpickle.loads(model), if possible (i.e. if the DPOptimizer is not needed or becomes loadable with cloudpickle)
 def load(buff: bytes, custom_model: Any = None) -> Any:
     """
     Deserialize a custom model object that may or may not contain a PyTorch model with a privacy engine.
@@ -118,16 +112,12 @@ def load(buff: bytes, custom_model: Any = None) -> Any:
             optimizer_defaults = checkpoint["optimizer_defaults"]
 
             # Ensure the optimizer is correctly created with model's parameters
-            optimizer = optimizer_class(
-                pytorch_model.parameters(), **optimizer_defaults
-            )
+            optimizer = optimizer_class(pytorch_model.parameters(), **optimizer_defaults)
 
             # Recreate the privacy engine
             privacy_engine = PrivacyEngine(
                 pytorch_model,
-                sample_rate=optimizer.defaults.get(
-                    "sample_rate", 0.01
-                ),  # Use saved or default values
+                sample_rate=optimizer.defaults.get("sample_rate", 0.01),  # Use saved or default values
                 noise_multiplier=optimizer.defaults.get("noise_multiplier", 1.0),
                 max_grad_norm=optimizer.defaults.get("max_grad_norm", 1.0),
             )

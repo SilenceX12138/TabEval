@@ -2,6 +2,7 @@
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![Downloads](https://static.pepy.tech/badge/tabeval)](https://pypi.org/project/tabeval/)
 
 TabEval is a comprehensive Python framework for evaluating synthetic tabular data generation methods. It provides a unified interface for benchmarking various synthetic data generation algorithms across multiple evaluation dimensions including density estimation, privacy preservation, machine learning efficacy, and structural fidelity.
 

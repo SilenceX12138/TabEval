@@ -506,7 +506,6 @@ class DynamicDeepHitModel:
                 # For all events: all patients that didn't experience event before
                 # must have a lower risk for that cause
                 if torch.sum(t > ti) > 0:
-                    # TODO: When data are sorted in time -> wan we make it even faster ?
                     loss += torch.mean(
                         torch.exp((cifk[t > ti][:, ti] - ci[ti])) / self.sigma
                     )
