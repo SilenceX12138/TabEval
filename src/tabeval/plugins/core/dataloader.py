@@ -944,7 +944,7 @@ class TimeSeriesDataLoader(DataLoader):
             masked_temporal_data = ma.masked_array(padded_temporal_data, mask)
             return (
                 np.asarray(static_data),
-                masked_temporal_data,  # TODO: check this works with time series benchmarks
+                masked_temporal_data,
                 # masked array to handle variable length sequences
                 ma.vstack(
                     [
@@ -984,7 +984,6 @@ class TimeSeriesDataLoader(DataLoader):
         return seq_data[seq_data[id_col].isin(ids_list)]
 
     def train(self) -> "DataLoader":
-        # TODO: stratify
         ids = self.ids()
         train_ids, _ = train_test_split(
             ids,
@@ -994,7 +993,6 @@ class TimeSeriesDataLoader(DataLoader):
         return self.unpack_and_decorate(self.filter_ids(train_ids))
 
     def test(self) -> "DataLoader":
-        # TODO: stratify
         ids = self.ids()
         _, test_ids = train_test_split(
             ids,
@@ -1183,7 +1181,6 @@ class TimeSeriesDataLoader(DataLoader):
             item_missing_rows = item.isna().sum(axis=1).values
             missing_horizons.append(item_missing_rows == len(temporal_features))
 
-            # TODO: review impact on horizons
             temporal_data[idx] = item.dropna()
 
         observation_times_unmasked = []
@@ -1368,7 +1365,6 @@ class TimeSeriesDataLoader(DataLoader):
             local_temporal_data = item_data[temporal_cols].copy()
             local_observation_times = item_data[time_col].values.tolist()
             local_temporal_data.columns = new_temporal_cols
-            # TODO: review impact on horizons
             local_temporal_data = local_temporal_data.dropna()
 
             temporal_data.append(local_temporal_data)

@@ -22,7 +22,7 @@ def compress_dataset(
     original_dtypes = df.infer_objects().dtypes
 
     if impute:
-        df = df.fillna(0)  # TODO: should we use a special symbol?
+        df = df.fillna(0)
     df.columns = df.columns.astype(str)
 
     # check redundant columns
@@ -120,9 +120,7 @@ def compress_dataset(
 
 
 @validate_arguments(config=dict(arbitrary_types_allowed=True))
-def decompress_dataset(
-    df: pd.DataFrame, context: Dict, cat_limit: int = 10
-) -> pd.DataFrame:
+def decompress_dataset(df: pd.DataFrame, context: Dict, cat_limit: int = 10) -> pd.DataFrame:
     if "encoders" not in context:
         raise ValueError("Invalid context. missing encoders")
 
@@ -148,9 +146,7 @@ def decompress_dataset(
         decoded = df[cat_group].str.split(" ", n=-1, expand=True)
 
         if decoded.shape[1] != len(src_cols):
-            raise ValueError(
-                f"Invalid decoding shape {decoded.shape} expected {len(src_cols)}"
-            )
+            raise ValueError(f"Invalid decoding shape {decoded.shape} expected {len(src_cols)}")
 
         df[src_cols] = decoded.astype(dtypes.reset_index(drop=True))
         df = df.drop(columns=[cat_group])
@@ -171,9 +167,7 @@ def decompress_dataset(
             vmin = context["compressers"][col]["min"]
             vmax = context["compressers"][col]["max"]
 
-            if pd.Series(src_cols).isin(df.columns).sum() != len(
-                src_cols
-            ):  # need to decode something else first
+            if pd.Series(src_cols).isin(df.columns).sum() != len(src_cols):  # need to decode something else first
                 continue
 
             src_covs = df[src_cols]

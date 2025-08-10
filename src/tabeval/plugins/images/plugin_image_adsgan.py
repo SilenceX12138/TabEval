@@ -131,7 +131,7 @@ class ImageAdsGANPlugin(Plugin):
         # core plugin arguments
         workspace: Path = Path("logs/tabeval_workspace"),
         sampling_patience: int = 500,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         super().__init__(
             device=device,
@@ -139,7 +139,7 @@ class ImageAdsGANPlugin(Plugin):
             sampling_patience=sampling_patience,
             workspace=workspace,
             compress_dataset=False,
-            **kwargs
+            **kwargs,
         )
         if patience_metric is None:
             patience_metric = WeightedMetrics(
@@ -187,9 +187,7 @@ class ImageAdsGANPlugin(Plugin):
     @staticmethod
     def hyperparameter_space(**kwargs: Any) -> List[Distribution]:
         return [
-            CategoricalDistribution(
-                name="generator_nonlin", choices=["relu", "leaky_relu", "tanh", "elu"]
-            ),
+            CategoricalDistribution(name="generator_nonlin", choices=["relu", "leaky_relu", "tanh", "elu"]),
             FloatDistribution(name="generator_dropout", low=0, high=0.2),
             CategoricalDistribution(
                 name="discriminator_nonlin",
@@ -269,7 +267,7 @@ class ImageAdsGANPlugin(Plugin):
         # synthetic labels
         self.label_generator: Optional[nn.Module] = None
 
-        if labels is not None:  # TODO: handle regression
+        if labels is not None:
             log.debug("Training the labels generator")
             self.label_generator = suggest_image_classifier_arch(
                 n_channels=X.info()["channels"],

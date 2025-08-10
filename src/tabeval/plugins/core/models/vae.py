@@ -566,7 +566,6 @@ class VAE(nn.Module):
                 # discr_loss = -(beta + 1) / (beta * N) * discr_loss
                 # discr_loss += torch.sum(cat_probs)
 
-                # TODO: debug why robust cross entropy is not working
                 discr_loss = nn.NLLLoss(reduction="sum")(
                     torch.log(reconstructed[:, step:step_end] + 1e-8),
                     torch.argmax(real[:, step:step_end], dim=-1),

@@ -10,60 +10,12 @@ from pydantic import validate_arguments
 from tabeval.plugins.core.dataloader import DataLoader, GenericDataLoader, create_from_info
 
 # tabeval relative
-from .eval_detection import (SyntheticDetectionGMM, SyntheticDetectionLinear, SyntheticDetectionMLP,
-                             SyntheticDetectionXGB)
-from .eval_performance import (AugmentationPerformanceEvaluatorLinear, AugmentationPerformanceEvaluatorMLP,
-                               AugmentationPerformanceEvaluatorXGB, FeatureImportanceRankDistance,
-                               PerformanceEvaluatorLinear, PerformanceEvaluatorMLP, PerformanceEvaluatorXGB)
-from .eval_privacy import (DeltaPresence, DomiasMIABNAF, DomiasMIAKDE, DomiasMIAPrior, IdentifiabilityScore,
-                           kAnonymization, kMap, lDiversityDistinct)
-from .eval_sanity import (CloseValuesProbability, CommonRowsProportion, DataMismatchScore, DistantValuesProbability,
-                          NearestSyntheticNeighborDistance)
-from .eval_statistical import (AlphaPrecision, ChiSquaredTest, FrechetInceptionDistance, InverseKLDivergence,
-                               JensenShannonDistance, KolmogorovSmirnovTest, MaximumMeanDiscrepancy, PRDCScore,
-                               SurvivalKMDistance, WassersteinDistance)
+from .eval_privacy import DCR
 from .scores import ScoreEvaluator
 
 standard_metrics = [
-    # sanity tests
-    DataMismatchScore,
-    CommonRowsProportion,
-    NearestSyntheticNeighborDistance,
-    CloseValuesProbability,
-    DistantValuesProbability,
-    # statistical tests
-    JensenShannonDistance,
-    ChiSquaredTest,
-    InverseKLDivergence,
-    KolmogorovSmirnovTest,
-    MaximumMeanDiscrepancy,
-    WassersteinDistance,
-    PRDCScore,
-    AlphaPrecision,
-    SurvivalKMDistance,
-    FrechetInceptionDistance,
-    # performance tests
-    PerformanceEvaluatorLinear,
-    PerformanceEvaluatorMLP,
-    PerformanceEvaluatorXGB,
-    AugmentationPerformanceEvaluatorLinear,
-    AugmentationPerformanceEvaluatorMLP,
-    AugmentationPerformanceEvaluatorXGB,
-    FeatureImportanceRankDistance,
-    # synthetic detection tests
-    SyntheticDetectionXGB,
-    SyntheticDetectionMLP,
-    SyntheticDetectionGMM,
-    SyntheticDetectionLinear,
     # privacy tests
-    DeltaPresence,
-    kAnonymization,
-    kMap,
-    lDiversityDistinct,
-    IdentifiabilityScore,
-    DomiasMIABNAF,  # TODO: This takes too long to include as default
-    DomiasMIAKDE,
-    DomiasMIAPrior,
+    DCR,
 ]
 
 
@@ -130,9 +82,7 @@ class Metrics:
             "time_series_survival",
         ]
         if task_type not in supported_tasks:
-            raise ValueError(
-                f"Invalid task type {task_type}. Supported: {supported_tasks}"
-            )
+            raise ValueError(f"Invalid task type {task_type}. Supported: {supported_tasks}")
 
         if not isinstance(X_gt, DataLoader):
             X_gt = GenericDataLoader(X_gt)
@@ -147,19 +97,13 @@ class Metrics:
             raise ValueError("Different dataloader types")
 
         if task_type == "survival_analysis":
-            if (
-                X_gt.type() != "survival_analysis"
-                and X_train.type() != "survival_analysis"
-            ):
+            if X_gt.type() != "survival_analysis" and X_train.type() != "survival_analysis":
                 raise ValueError("Invalid dataloader for survival analysis")
         elif task_type == "time_series":
             if X_gt.type() != "time_series" and X_train.type() != "time_series":
                 raise ValueError("Invalid dataloader for time series")
         elif task_type == "time_series_survival":
-            if (
-                X_gt.type() != "time_series_survival"
-                and X_train.type() != "time_series_survival"
-            ):
+            if X_gt.type() != "time_series_survival" and X_train.type() != "time_series_survival":
                 raise ValueError("Invalid dataloader for time series survival analysis")
 
         if metrics is None:
@@ -168,7 +112,7 @@ class Metrics:
         """
         We need to encode the categorical data in the real and synthetic data.
         To ensure each category in the two datasets are mapped to the same one hot vector, we merge X_syn into X_gt for computing the encoder.
-        TODO: Check whether the optional datasets also need to be taking into account when getting the encoder.
+        Check whether the optional datasets also need to be taking into account when getting the encoder.
         """
         X_gt_df = X_gt.dataframe()
         X_syn_df = X_syn.dataframe()
@@ -223,7 +167,7 @@ class Metrics:
                     X_syn,
                     X_train,
                     X_ref_syn,
-                    reference_size=10,  # TODO: review this
+                    reference_size=10,
                 )
             else:
                 scores.queue(
