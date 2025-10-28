@@ -48,7 +48,7 @@ jobs:
           cd docs/wiki && make html
 
       - name: Upload documentation artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: documentation
           path: docs/wiki/_build/html/
