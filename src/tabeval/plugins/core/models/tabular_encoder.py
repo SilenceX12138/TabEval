@@ -1,5 +1,4 @@
-"""TabularEncoder module.
-"""
+"""TabularEncoder module."""
 
 # stdlib
 from typing import Any, List, Optional, Sequence, Tuple, Union
@@ -7,12 +6,11 @@ from typing import Any, List, Optional, Sequence, Tuple, Union
 # third party
 import numpy as np
 import pandas as pd
-from pydantic import BaseModel, field_validator, validate_arguments
-from sklearn.base import BaseEstimator, TransformerMixin
-from sklearn.preprocessing import MinMaxScaler
-
 # tabeval absolute
 import tabeval.logger as log
+from pydantic import BaseModel, field_validator, validate_call
+from sklearn.base import BaseEstimator, TransformerMixin
+from sklearn.preprocessing import MinMaxScaler
 from tabeval.utils.dataframe import discrete_columns as find_cat_cols
 from tabeval.utils.serialization import dataframe_hash
 
@@ -62,7 +60,7 @@ class TabularEncoder(TransformerMixin, BaseEstimator):
     cat_encoder_params: dict = dict(handle_unknown="ignore", sparse_output=False)
     cont_encoder_params: dict = dict(n_components=10)
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def __init__(
         self,
         *,
@@ -98,7 +96,7 @@ class TabularEncoder(TransformerMixin, BaseEstimator):
         if self.continuous_encoder == "bayesian_gmm":
             self.cont_encoder_params["n_components"] = max_clusters
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def _fit_feature(self, feature: pd.Series, feature_type: str) -> FeatureInfo:
         """Fit the feature encoder on a column.
 
@@ -128,7 +126,7 @@ class TabularEncoder(TransformerMixin, BaseEstimator):
             trans_feature_types=encoder.feature_types_out,
         )
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def fit(self, raw_data: pd.DataFrame, discrete_columns: Optional[List] = None) -> Any:
         """Fit the ``TabularEncoder``.
 
@@ -162,7 +160,7 @@ class TabularEncoder(TransformerMixin, BaseEstimator):
             columns=column_transform_info.transformed_features,
         )
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def transform(self, raw_data: pd.DataFrame) -> pd.DataFrame:
         """Take raw data and output a matrix data."""
         if len(self._column_transform_info_list) == 0:
@@ -184,7 +182,7 @@ class TabularEncoder(TransformerMixin, BaseEstimator):
 
         return result
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def _inverse_transform_feature(
         self,
         column_transform_info: FeatureInfo,
@@ -193,7 +191,7 @@ class TabularEncoder(TransformerMixin, BaseEstimator):
         encoder = column_transform_info.transform
         return encoder.inverse_transform(column_data)
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def inverse_transform(self, data: pd.DataFrame) -> pd.DataFrame:
         """Take matrix data and output raw data.
 
@@ -223,9 +221,10 @@ class TabularEncoder(TransformerMixin, BaseEstimator):
             st += dim
 
         recovered_data = np.column_stack(recovered_feature_list)
-        recovered_data = pd.DataFrame(recovered_data, columns=names, index=data.index).astype(
-            self._column_raw_dtypes.filter(names)
-        )
+        # As the inherent inverse transform keeps the original dtype,
+        # and the inversely transformed data may have different dtypes, such as None
+        # we do **not** need to format the column types again
+        recovered_data = pd.DataFrame(recovered_data, columns=names, index=data.index)
         return recovered_data
 
     def layout(self) -> Sequence[FeatureInfo]:
@@ -249,7 +248,7 @@ class TabularEncoder(TransformerMixin, BaseEstimator):
 
         raise RuntimeError(f"Unknown column {name}")
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def activation_layout(self, discrete_activation: str, continuous_activation: str) -> Sequence[Tuple[str, int]]:
         """Get the layout of the activations.
 
@@ -307,7 +306,7 @@ class TimeSeriesTabularEncoder(TransformerMixin, BaseEstimator):
     Discrete columns are encoded using a scikit-learn OneHotEncoder.
     """
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def __init__(
         self,
         max_clusters: int = 10,
@@ -363,7 +362,7 @@ class TimeSeriesTabularEncoder(TransformerMixin, BaseEstimator):
 
         return self
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def transform_observation_times(
         self,
         observation_times: List,
@@ -375,7 +374,7 @@ class TimeSeriesTabularEncoder(TransformerMixin, BaseEstimator):
         )
         return horizons_encoded
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def transform_temporal(
         self,
         temporal_data: List[pd.DataFrame],
@@ -389,7 +388,7 @@ class TimeSeriesTabularEncoder(TransformerMixin, BaseEstimator):
 
         return temporal_encoded, horizons_encoded
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def transform_static(
         self,
         static_data: pd.DataFrame,
@@ -398,7 +397,7 @@ class TimeSeriesTabularEncoder(TransformerMixin, BaseEstimator):
 
         return static_encoded
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def transform(
         self,
         static_data: pd.DataFrame,
@@ -411,7 +410,7 @@ class TimeSeriesTabularEncoder(TransformerMixin, BaseEstimator):
 
         return static_encoded, temporal_encoded, horizons_encoded
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def fit_transform_temporal(
         self,
         temporal_data: List[pd.DataFrame],
@@ -419,7 +418,7 @@ class TimeSeriesTabularEncoder(TransformerMixin, BaseEstimator):
     ) -> Tuple[pd.DataFrame, List]:
         return self.fit_temporal(temporal_data, observation_times).transform_temporal(temporal_data, observation_times)
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def fit_transform(
         self,
         static_data: pd.DataFrame,
@@ -430,7 +429,7 @@ class TimeSeriesTabularEncoder(TransformerMixin, BaseEstimator):
             static_data, temporal_data, observation_times
         )
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def inverse_transform_observation_times(
         self,
         observation_times: List,
@@ -442,7 +441,7 @@ class TimeSeriesTabularEncoder(TransformerMixin, BaseEstimator):
         )
         return horizons_decoded
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def inverse_transform_temporal(
         self,
         temporal_encoded: List[pd.DataFrame],
@@ -456,7 +455,7 @@ class TimeSeriesTabularEncoder(TransformerMixin, BaseEstimator):
 
         return temporal_decoded, horizons_decoded
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def inverse_transform_static(
         self,
         static_encoded: pd.DataFrame,
@@ -464,7 +463,7 @@ class TimeSeriesTabularEncoder(TransformerMixin, BaseEstimator):
         static_decoded = self.static_encoder.inverse_transform(static_encoded)
         return static_decoded
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def inverse_transform(
         self,
         static_encoded: pd.DataFrame,
@@ -482,11 +481,11 @@ class TimeSeriesTabularEncoder(TransformerMixin, BaseEstimator):
     def n_features(self) -> Tuple:
         return self.static_encoder.n_features(), self.temporal_encoder.n_features()
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def activation_layout_temporal(self, discrete_activation: str, continuous_activation: str) -> Any:
         return self.temporal_encoder.activation_layout(discrete_activation, continuous_activation)
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def activation_layout(self, discrete_activation: str, continuous_activation: str) -> Tuple:
         return self.static_encoder.activation_layout(
             discrete_activation, continuous_activation
@@ -500,7 +499,7 @@ class TimeSeriesBinEncoder(TransformerMixin, BaseEstimator):
     Discrete columns are encoded using a scikit-learn OneHotEncoder.
     """
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def __init__(
         self,
         max_clusters: int = 10,
@@ -554,7 +553,7 @@ class TimeSeriesBinEncoder(TransformerMixin, BaseEstimator):
         self.encoder.fit(data, discrete_columns=discrete_columns)
         return self
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def transform(
         self,
         static_data: pd.DataFrame,
@@ -565,7 +564,7 @@ class TimeSeriesBinEncoder(TransformerMixin, BaseEstimator):
         data = self._prepare(static_data, temporal_data, observation_times)
         return self.encoder.transform(data)
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def fit_transform(
         self,
         static: pd.DataFrame,

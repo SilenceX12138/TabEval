@@ -4,7 +4,7 @@ from typing import Any, Callable, List, Optional, Tuple
 # third party
 import numpy as np
 import torch
-from pydantic import validate_arguments
+from pydantic import validate_call
 from torch import nn
 from torch.utils.data import DataLoader, TensorDataset, sampler
 from tqdm import tqdm
@@ -111,7 +111,7 @@ class TimeSeriesGAN(nn.Module):
             Whether to condition the covariate generation on the observation times or not.
     """
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def __init__(
         self,
         n_static_units: int,
@@ -390,7 +390,7 @@ class TimeSeriesGAN(nn.Module):
             observation_times.detach().cpu().numpy(),
         )
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def forward(
         self,
         count: int,

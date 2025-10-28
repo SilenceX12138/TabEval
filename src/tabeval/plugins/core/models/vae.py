@@ -4,7 +4,7 @@ from typing import Any, Callable, List, Optional, Tuple
 # third party
 import numpy as np
 import torch
-from pydantic import validate_arguments
+from pydantic import validate_call
 from torch import Tensor, nn
 from torch.optim import Adam
 from torch.utils.data import DataLoader, TensorDataset, sampler
@@ -19,7 +19,7 @@ from .mlp import MLP
 
 
 class Encoder(nn.Module):
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def __init__(
         self,
         n_units_in: int,
@@ -52,7 +52,7 @@ class Encoder(nn.Module):
         self.mu_fc = nn.Linear(n_units_hidden, n_units_embedding).to(self.device)
         self.logvar_fc = nn.Linear(n_units_hidden, n_units_embedding).to(self.device)
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def forward(
         self, X: Tensor, cond: Optional[torch.Tensor] = None
     ) -> Tuple[Tensor, Tensor]:
@@ -72,7 +72,7 @@ class Encoder(nn.Module):
 
 
 class Decoder(nn.Module):
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def __init__(
         self,
         n_units_embedding: int,
@@ -104,7 +104,7 @@ class Decoder(nn.Module):
             device=device,
         ).to(self.device)
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def forward(self, X: Tensor, cond: Optional[torch.Tensor] = None) -> Tensor:
         data = self._append_optional_cond(X, cond)
         return self.model(data)
@@ -187,7 +187,7 @@ class VAE(nn.Module):
             Max number of iterations without any improvement before early stopping is trigged.
     """
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def __init__(
         self,
         n_features: int,
@@ -304,7 +304,7 @@ class VAE(nn.Module):
 
         return self
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def generate(self, count: int, cond: Optional[np.ndarray] = None) -> np.ndarray:
         self.decoder.eval()
 
@@ -373,7 +373,7 @@ class VAE(nn.Module):
 
         return X_train, X_val, cond_train, cond_test
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def _train(
         self,
         X: Tensor,
@@ -528,9 +528,7 @@ class VAE(nn.Module):
             )
 
         reconstruction_loss = torch.sum(torch.stack(loss)) / real.shape[0]
-        KLD_loss = (-0.5 * torch.sum(1 + logvar - mu**2 - logvar.exp())) / real.shape[
-            0
-        ]
+        KLD_loss = (-0.5 * torch.sum(1 + logvar - mu**2 - logvar.exp())) / real.shape[0]
 
         if torch.isnan(reconstruction_loss):
             raise RuntimeError("NaNs detected in the reconstruction_loss")
@@ -593,8 +591,6 @@ class VAE(nn.Module):
 
         reconstruction_loss = torch.sum(torch.stack(loss)) / real.shape[0]
 
-        KLD_loss = (-0.5 * torch.sum(1 + logvar - mu**2 - logvar.exp())) / real.shape[
-            0
-        ]
+        KLD_loss = (-0.5 * torch.sum(1 + logvar - mu**2 - logvar.exp())) / real.shape[0]
 
         return reconstruction_loss * self.loss_factor + KLD_loss

@@ -48,8 +48,7 @@ class LBFGSBScipy(torch.optim.Optimizer):
 
         if len(self.param_groups) != 1:
             raise ValueError(
-                "LBFGSBScipy doesn't support per-parameter options"
-                " (parameter groups)"
+                "LBFGSBScipy doesn't support per-parameter options (parameter groups)"
             )
 
         self._params = self.param_groups[0]["params"]

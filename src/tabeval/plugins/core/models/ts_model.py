@@ -4,7 +4,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 # third party
 import numpy as np
 import torch
-from pydantic import validate_arguments
+from pydantic import validate_call
 from sklearn.model_selection import train_test_split
 from torch import nn
 from torch.utils.data import DataLoader, TensorDataset, sampler
@@ -116,7 +116,7 @@ class TimeSeriesModel(nn.Module):
             Whether to predict using the observation times(True) or just the covariates(False).
     """
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def __init__(
         self,
         task_type: str,  # regression, classification
@@ -237,7 +237,7 @@ class TimeSeriesModel(nn.Module):
             weight_decay=weight_decay,
         )  # optimize all rnn parameters
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def forward(
         self,
         static_data: torch.Tensor,
@@ -274,7 +274,7 @@ class TimeSeriesModel(nn.Module):
 
         return pred
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def predict(
         self,
         static_data: Union[List, np.ndarray],
@@ -319,7 +319,7 @@ class TimeSeriesModel(nn.Module):
         else:
             return np.mean(np.inner(outcome - y_pred, outcome - y_pred) / 2.0)
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def fit(
         self,
         static_data: Union[List, np.ndarray],
@@ -339,7 +339,7 @@ class TimeSeriesModel(nn.Module):
             static_data_t, temporal_data_t, observation_times_t, outcome_t
         )
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def _train(
         self,
         static_data: List[torch.Tensor],
@@ -688,7 +688,7 @@ class TimeSeriesLayer(nn.Module):
 
 
 class WindowLinearLayer(nn.Module):
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def __init__(
         self,
         n_static_units_in: int,
@@ -717,7 +717,7 @@ class WindowLinearLayer(nn.Module):
             device=device,
         )
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def forward(
         self, static_data: torch.Tensor, temporal_data: torch.Tensor
     ) -> torch.Tensor:

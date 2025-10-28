@@ -22,14 +22,14 @@ license = {file = "LICENSE"}
 name = "tabeval"
 readme = "README.md"
 requires-python = ">=3.10"
-version = "2025.08.10"
+version = "2025.10.28"
 
 dependencies = [
   "hatchling",
   "pytest",
   "flake8",
   "pylint",
-  "setuptools==75.1.0",
+  "setuptools",
   "sphinx",
   "myst-parser",
   "sphinx-rtd-theme",
@@ -67,6 +67,8 @@ dependencies = [
   "arfpy",
   "build",
   "tabpfn",
+  "nrgboost",
+  "peft==0.9.0",
 ]
 
 [project.optional-dependencies]

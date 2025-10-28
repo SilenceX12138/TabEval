@@ -5,7 +5,7 @@ from typing import Any, Dict, Optional, Union
 # third party
 import pandas as pd
 import torch
-from pydantic import validate_arguments
+from pydantic import ConfigDict, validate_call
 
 try:
     # third party
@@ -61,13 +61,7 @@ class TabularGReaT(metaclass=ABCMeta):
         batch_size: int = 8,
         train_kwargs: Dict = {},
         # core plugin arguments
-        encoder_max_clusters: int = 20,
-        encoder_whitelist: list = [],
         device: Union[str, torch.device] = DEVICE,
-        learning_rate: float = 5e-3,
-        weight_decay: float = 1e-3,
-        logging_epoch: int = 100,
-        random_state: int = 0,
         **kwargs: Any,
     ):
         super(TabularGReaT, self).__init__()
@@ -87,7 +81,7 @@ class TabularGReaT(metaclass=ABCMeta):
             **self.train_kwargs,
         )
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
     def fit(
         self,
         X: pd.DataFrame,
@@ -114,7 +108,7 @@ class TabularGReaT(metaclass=ABCMeta):
         )
         return self
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
     def generate(
         self,
         count: int,

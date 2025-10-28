@@ -4,18 +4,11 @@ from typing import Any, List, Optional, Type, Union
 # third party
 import numpy as np
 import pandas as pd
-from pydantic import validate_arguments
+from pydantic import validate_call
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.mixture import BayesianGaussianMixture
-from sklearn.preprocessing import (
-    LabelEncoder,
-    MinMaxScaler,
-    OneHotEncoder,
-    OrdinalEncoder,
-    QuantileTransformer,
-    RobustScaler,
-    StandardScaler,
-)
+from sklearn.preprocessing import (LabelEncoder, MinMaxScaler, OneHotEncoder, OrdinalEncoder, QuantileTransformer,
+                                   RobustScaler, StandardScaler)
 
 
 def validate_shape(x: np.ndarray, n_dim: int) -> np.ndarray:
@@ -51,16 +44,14 @@ class FeatureEncoder(TransformerMixin, BaseEstimator):  # type: ignore
     feature_types_out: List[str]
     categorical: bool = False  # used by get_feature_types_out
 
-    def __init__(
-        self, n_dim_in: Optional[int] = None, n_dim_out: Optional[int] = None
-    ) -> None:
+    def __init__(self, n_dim_in: Optional[int] = None, n_dim_out: Optional[int] = None) -> None:
         super().__init__()
         if n_dim_in is not None:
             self.n_dim_in = n_dim_in
         if n_dim_out is not None:
             self.n_dim_out = n_dim_out
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def fit(self, x: pd.Series, y: Any = None, **kwargs: Any) -> FeatureEncoder:
         self.feature_name_in = x.name
         self.feature_type_in = self._get_feature_type(x)
@@ -79,7 +70,7 @@ class FeatureEncoder(TransformerMixin, BaseEstimator):  # type: ignore
     def _fit(self, x: np.ndarray, **kwargs: Any) -> FeatureEncoder:
         return self
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def transform(self, x: pd.Series) -> Union[pd.DataFrame, pd.Series]:
         data = validate_shape(x.values, self.n_dim_in)
         out = self._transform(data)
@@ -113,7 +104,7 @@ class FeatureEncoder(TransformerMixin, BaseEstimator):  # type: ignore
         else:
             return "discrete"
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def inverse_transform(self, df: Union[pd.DataFrame, pd.Series]) -> pd.Series:
         y = df.values.reshape(self._out_shape)
         x = self._inverse_transform(y)
@@ -124,9 +115,7 @@ class FeatureEncoder(TransformerMixin, BaseEstimator):  # type: ignore
         return data
 
     @classmethod
-    def wraps(
-        cls: type, encoder_class: TransformerMixin, **params: Any
-    ) -> Type[FeatureEncoder]:
+    def wraps(cls: type, encoder_class: TransformerMixin, **params: Any) -> Type[FeatureEncoder]:
         """Wraps sklearn transformer to FeatureEncoder."""
 
         class WrappedEncoder(FeatureEncoder):
@@ -156,9 +145,7 @@ class FeatureEncoder(TransformerMixin, BaseEstimator):  # type: ignore
         return WrappedEncoder
 
 
-OneHotEncoder = FeatureEncoder.wraps(
-    OneHotEncoder, categorical=True, handle_unknown="ignore"
-)
+OneHotEncoder = FeatureEncoder.wraps(OneHotEncoder, categorical=True, handle_unknown="ignore")
 OrdinalEncoder = FeatureEncoder.wraps(OrdinalEncoder, categorical=True)
 LabelEncoder = FeatureEncoder.wraps(LabelEncoder, n_dim_out=1, categorical=True)
 StandardScaler = FeatureEncoder.wraps(StandardScaler)
@@ -234,9 +221,7 @@ class BayesianGMMEncoder(FeatureEncoder):
 
     def get_feature_names_out(self) -> List[str]:
         name = self.feature_name_in
-        return [f"{name}.value"] + [
-            f"{name}.component_{i}" for i in range(self.n_components)
-        ]
+        return [f"{name}.value"] + [f"{name}.component_{i}" for i in range(self.n_components)]
 
     def get_feature_types_out(self, output: np.ndarray) -> List[str]:
         return ["continuous"] + ["discrete"] * self.n_components
@@ -265,7 +250,7 @@ class GaussianQuantileTransformer(QuantileTransformer):
         self,
         *,
         ignore_implicit_zeros: bool = False,
-        subsample: int = 10000,
+        subsample: int = int(1e9),
         random_state: Any = None,
         copy: bool = True,
     ) -> None:

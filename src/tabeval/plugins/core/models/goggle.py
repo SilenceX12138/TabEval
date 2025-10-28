@@ -6,21 +6,21 @@ from typing import Any, List, Optional, Tuple, Union
 # third party
 import dgl
 import numpy as np
+
+# tabeval absolute
+import tabeval.logger as log
 import torch
 from dgl.nn import GraphConv, SAGEConv
-from pydantic import validate_arguments
+from pydantic import validate_call
+from tabeval.plugins.core.dataloader import DataLoader
+from tabeval.utils.constants import DEVICE
+from tabeval.utils.reproducibility import clear_cache, enable_reproducible_results
 from torch import nn
 from torch.utils.data import DataLoader as TorchDataLoader
 from torch.utils.data import TensorDataset
 from torch_geometric.nn.conv import MessagePassing
 from torch_geometric.utils import dense_to_sparse
 from tqdm import tqdm
-
-# tabeval absolute
-import tabeval.logger as log
-from tabeval.plugins.core.dataloader import DataLoader
-from tabeval.utils.constants import DEVICE
-from tabeval.utils.reproducibility import clear_cache, enable_reproducible_results
 
 # tabeval relative
 from .factory import get_nonlin
@@ -29,7 +29,7 @@ from .RGCNConv import RGCNConv
 
 
 class Goggle(nn.Module):
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def __init__(
         self,
         input_dim: int,
@@ -75,9 +75,7 @@ class Goggle(nn.Module):
             decoder_nonlin_out = [("none", input_dim)]
         self.decoder_nonlin_out = decoder_nonlin_out
 
-        self.learned_graph = LearnedGraph(
-            input_dim, graph_prior, prior_mask, threshold, device=self.device
-        )
+        self.learned_graph = LearnedGraph(input_dim, graph_prior, prior_mask, threshold, device=self.device)
         self.encoder = Encoder(input_dim, encoder_dim, encoder_l, encoder_nonlin)
         if decoder_arch == "het":
             n_edge_types = input_dim * input_dim
@@ -199,7 +197,7 @@ class Goggle(nn.Module):
 
             if (epoch + 1) % self.logging_epoch == 0:
                 log.debug(
-                    f"[Epoch {(epoch+1):3}/{self.n_iter}, patience {patience:2}] train: {train_loss:.3f}, val: {val_loss[0]:.3f}"
+                    f"[Epoch {(epoch + 1):3}/{self.n_iter}, patience {patience:2}] train: {train_loss:.3f}, val: {val_loss[0]:.3f}"
                 )
 
             if patience == self.patience:
@@ -230,9 +228,7 @@ class Goggle(nn.Module):
                 self.eval()
                 data = data[0].to(self.device)
                 x_hat, adj, mu_z, logvar_z = self(data, epoch)
-                loss, loss_rec, loss_kld, loss_graph = self.loss(
-                    x_hat, data, mu_z, logvar_z, adj
-                )
+                loss, loss_rec, loss_kld, loss_graph = self.loss(x_hat, data, mu_z, logvar_z, adj)
 
                 eval_loss += loss.item()
                 rec_loss += loss_rec.item()
@@ -247,7 +243,7 @@ class Goggle(nn.Module):
 
             return eval_loss, rec_loss, kld_loss, graph_loss
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def generate(
         self,
         count: int,
@@ -263,6 +259,8 @@ class Goggle(nn.Module):
             self.decoder.eval()
 
             adj = self.learned_graph(100)
+            if count == 1:
+                z = z.unsqueeze(0)
             graph_input = self.graph_processor(z, adj)
             synth_x = self.decoder(graph_input, count)
 
@@ -340,7 +338,7 @@ class Encoder(nn.Module):
 
 
 class GraphDecoderHomo(nn.Module):
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def __init__(
         self,
         decoder_dim: int,
@@ -358,9 +356,7 @@ class GraphDecoderHomo(nn.Module):
         if decoder_arch == "gcn":
             for i in range(decoder_l):
                 if i == decoder_l - 1:
-                    decoder.append(
-                        GraphConv(decoder_dim, 1, norm="both", weight=True, bias=True)
-                    )
+                    decoder.append(GraphConv(decoder_dim, 1, norm="both", weight=True, bias=True))
                 else:
                     decoder_dim_ = int(decoder_dim / 2)
                     decoder.append(
@@ -378,9 +374,7 @@ class GraphDecoderHomo(nn.Module):
         elif decoder_arch == "sage":
             for i in range(decoder_l):
                 if i == decoder_l - 1:
-                    decoder.append(
-                        SAGEConv(decoder_dim, 1, aggregator_type="mean", bias=True)
-                    )
+                    decoder.append(SAGEConv(decoder_dim, 1, aggregator_type="mean", bias=True))
                 else:
                     decoder_dim_ = int(decoder_dim / 2)
                     decoder.append(
@@ -425,7 +419,7 @@ class GraphDecoderHomo(nn.Module):
 
 
 class GraphDecoderHet(nn.Module):
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def __init__(
         self,
         decoder_dim: int,
@@ -502,7 +496,7 @@ class GraphDecoderHet(nn.Module):
 
 
 class GraphInputProcessorHomo(nn.Module):
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def __init__(
         self,
         input_dim: int,
@@ -521,13 +515,9 @@ class GraphInputProcessorHomo(nn.Module):
 
         self.embedding_functions = []
         for _ in range(input_dim):
-            self.embedding_functions.append(
-                nn.Sequential(nn.Linear(feat_dim, decoder_dim), nn.Tanh()).to(device)
-            )
+            self.embedding_functions.append(nn.Sequential(nn.Linear(feat_dim, decoder_dim), nn.Tanh()).to(device))
 
-    def forward(
-        self, z: torch.Tensor, adj: torch.Tensor
-    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    def forward(self, z: torch.Tensor, adj: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         """
         Prepares embeddings for graph decoding
             Parameters:
@@ -563,7 +553,7 @@ class GraphInputProcessorHomo(nn.Module):
 
 
 class GraphInputProcessorHet(nn.Module):
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def __init__(
         self,
         input_dim: int,
@@ -584,9 +574,7 @@ class GraphInputProcessorHet(nn.Module):
 
         self.embedding_functions = []
         for _ in range(input_dim):
-            self.embedding_functions.append(
-                nn.Sequential(nn.Linear(feat_dim, decoder_dim), nn.Tanh()).to(device)
-            )
+            self.embedding_functions.append(nn.Sequential(nn.Linear(feat_dim, decoder_dim), nn.Tanh()).to(device))
 
     def forward(
         self, z: torch.Tensor, adj: torch.Tensor
@@ -618,11 +606,7 @@ class GraphInputProcessorHet(nn.Module):
         b_size, n_nodes, n_feats = b_z.shape
 
         n_edge_types = self.n_edge_types
-        edge_types = (
-            torch.arange(1, n_edge_types + 1, 1)
-            .reshape(n_nodes, n_nodes)
-            .to(self.device)
-        )
+        edge_types = torch.arange(1, n_edge_types + 1, 1).reshape(n_nodes, n_nodes).to(self.device)
 
         b_adj = torch.stack([adj for _ in range(b_size)], dim=0)
 
@@ -636,7 +620,7 @@ class GraphInputProcessorHet(nn.Module):
 
 
 class LearnedGraph(nn.Module):
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def __init__(
         self,
         input_dim: int,
@@ -647,17 +631,11 @@ class LearnedGraph(nn.Module):
     ) -> None:
         super().__init__()
 
-        self.graph = nn.Parameter(
-            torch.zeros(input_dim, input_dim, requires_grad=True, device=device)
-        )
+        self.graph = nn.Parameter(torch.zeros(input_dim, input_dim, requires_grad=True, device=device))
 
         if all(i is not None for i in [graph_prior, prior_mask]):
-            self.graph_prior = (
-                graph_prior.detach().clone().requires_grad_(False).to(device)
-            )
-            self.prior_mask = (
-                prior_mask.detach().clone().requires_grad_(False).to(device)
-            )
+            self.graph_prior = graph_prior.detach().clone().requires_grad_(False).to(device)
+            self.prior_mask = prior_mask.detach().clone().requires_grad_(False).to(device)
             self.use_prior = True
         else:
             self.use_prior = False
@@ -668,17 +646,14 @@ class LearnedGraph(nn.Module):
 
     def forward(self, iter: int) -> torch.Tensor:
         if self.use_prior:
-            graph = (
-                self.prior_mask * self.graph_prior + (1 - self.prior_mask) * self.graph
-            )
+            graph = self.prior_mask * self.graph_prior + (1 - self.prior_mask) * self.graph
         else:
             graph = self.graph
 
         graph = self.act(graph)
         graph = graph.clone()
         graph = graph * (
-            torch.ones(graph.shape[0]).to(self.device)
-            - torch.eye(graph.shape[0]).to(self.device)
+            torch.ones(graph.shape[0]).to(self.device) - torch.eye(graph.shape[0]).to(self.device)
         ) + torch.eye(graph.shape[0]).to(self.device)
 
         if iter > 50:
@@ -689,7 +664,7 @@ class LearnedGraph(nn.Module):
 
 
 class GoggleLoss(nn.Module):
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def __init__(
         self,
         alpha: float = 1.0,
@@ -704,9 +679,7 @@ class GoggleLoss(nn.Module):
         self.beta = beta
         if graph_prior is not None:
             self.use_prior = True
-            self.graph_prior = (
-                torch.Tensor(graph_prior).requires_grad_(False).to(device)
-            )
+            self.graph_prior = torch.Tensor(graph_prior).requires_grad_(False).to(device)
         else:
             self.use_prior = False
 

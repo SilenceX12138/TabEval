@@ -6,7 +6,7 @@ import numpy as np
 import torch
 from monai.networks.layers.factories import Act
 from monai.networks.nets import Classifier, Discriminator, Generator
-from pydantic import validate_arguments
+from pydantic import validate_call
 from torch import nn
 
 # tabeval absolute
@@ -66,7 +66,7 @@ class ConvNet(nn.Module):
         Enable/disable early stopping
     """
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def __init__(
         self,
         task_type: str,  # classification/regression
@@ -168,7 +168,7 @@ class ConvNet(nn.Module):
 
         return self
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def predict_proba(self, X: torch.Tensor) -> torch.Tensor:
         if self.task_type != "classification":
             raise ValueError(f"Invalid task type for predict_proba {self.task_type}")
@@ -180,7 +180,7 @@ class ConvNet(nn.Module):
 
             return yt.cpu()
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def predict(self, X: torch.Tensor) -> torch.Tensor:
         with torch.no_grad():
             Xt = self._check_tensor(X)
@@ -199,7 +199,7 @@ class ConvNet(nn.Module):
         else:
             return torch.mean(torch.inner(y - y_pred, y - y_pred) / 2.0)
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def forward(self, X: torch.Tensor) -> torch.Tensor:
         X = self._check_tensor(X)
 

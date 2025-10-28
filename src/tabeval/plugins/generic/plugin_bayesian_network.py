@@ -11,9 +11,8 @@ from typing import Any, List
 import numpy as np
 import pandas as pd
 import pgmpy.estimators as estimators
-from pgmpy.models import BayesianNetwork
+from pgmpy.models import DiscreteBayesianNetwork
 from pgmpy.sampling import BayesianModelSampling
-
 # tabeval absolute
 from tabeval.plugins.core.dataloader import DataLoader
 from tabeval.plugins.core.distribution import CategoricalDistribution, Distribution
@@ -110,18 +109,14 @@ class BayesianNetworkPlugin(Plugin):
                 name="struct_learning_search_method",
                 choices=["hillclimb", "pc", "tree_search"],
             ),
-            CategoricalDistribution(
-                name="struct_learning_score", choices=["k2", "bdeu", "bic", "bds"]
-            ),
+            CategoricalDistribution(name="struct_learning_score", choices=["k2", "bdeu", "bic", "bds"]),
         ]
 
     def _encode_decode(self, data: pd.DataFrame) -> pd.DataFrame:
         encoded = self.encoder.transform(data)
 
         # add noise to the mixture means, but keep the continuous cluster
-        noise = np.random.normal(
-            loc=0, scale=self.encoder_noise_scale, size=len(encoded)
-        )
+        noise = np.random.normal(loc=0, scale=self.encoder_noise_scale, size=len(encoded))
         for col in encoded.columns:
             if col.endswith(".value"):
                 encoded[col] += noise
@@ -133,10 +128,10 @@ class BayesianNetworkPlugin(Plugin):
 
     def _get_structure_scorer(self) -> Any:
         return {
-            "k2": estimators.K2Score,
-            "bdeu": estimators.BDeuScore,
-            "bic": estimators.BicScore,
-            "bds": estimators.BDsScore,
+            "k2": estimators.K2,
+            "bdeu": estimators.BDeu,
+            "bic": estimators.BIC,
+            "bds": estimators.BDs,
         }[self.struct_learning_score]
 
     def _get_dag(self, X: pd.DataFrame) -> Any:
@@ -149,9 +144,7 @@ class BayesianNetworkPlugin(Plugin):
                 show_progress=False,
             )
         elif self.struct_learning_search_method == "pc":
-            return estimators.PC(data=X).estimate(
-                scoring_method=scoring_method, show_progress=False
-            )
+            return estimators.PC(data=X).estimate(scoring_method=scoring_method, show_progress=False)
         elif self.struct_learning_search_method == "tree_search":
             return estimators.TreeSearch(data=X).estimate(show_progress=False)
         elif self.struct_learning_search_method == "mmhc":
@@ -169,7 +162,7 @@ class BayesianNetworkPlugin(Plugin):
 
         dag = self._get_dag(df)
 
-        network = BayesianNetwork(dag)
+        network = DiscreteBayesianNetwork(dag)
         network.fit(df)
 
         self.model = BayesianModelSampling(network)

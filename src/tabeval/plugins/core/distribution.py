@@ -134,7 +134,7 @@ class Distribution(BaseModel, metaclass=ABCMeta):
         ...
 
     def __eq__(self, other: Any) -> bool:
-        return type(self) == type(other) and self.get() == other.get()
+        return type(self) is type(other) and self.get() == other.get()
 
     def __contains__(self, item: Any) -> bool:
         """
@@ -147,7 +147,7 @@ class Distribution(BaseModel, metaclass=ABCMeta):
 
     @abstractmethod
     def dtype(self) -> str:
-        ...
+        pass
 
 
 class CategoricalDistribution(Distribution):

@@ -4,7 +4,7 @@ from typing import Any, List, Optional, Tuple
 # third party
 import numpy as np
 import torch
-from pydantic import validate_arguments
+from pydantic import validate_call
 from torch import Tensor, nn
 from torch.optim import Adam
 from torch.utils.data import DataLoader, TensorDataset
@@ -53,7 +53,7 @@ class LatentODE(nn.Module):
 
 
 class TimeSeriesEncoder(nn.Module):
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def __init__(
         self,
         n_static_units: int,
@@ -139,7 +139,7 @@ class TimeSeriesEncoder(nn.Module):
 
 
 class TimeSeriesDecoder(nn.Module):
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def __init__(
         self,
         n_static_units_embedding: int,
@@ -209,7 +209,7 @@ class TimeSeriesDecoder(nn.Module):
             use_horizon_condition=True,
         )
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def forward(
         self, static_embs: Tensor, temporal_embs: Tensor, horizon_embs: Tensor
     ) -> Tensor:
@@ -417,7 +417,7 @@ class TimeSeriesVAE(nn.Module):
 
         return self
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def generate(self, samples: int) -> np.ndarray:
         self.decoder.eval()
 
@@ -513,7 +513,7 @@ class TimeSeriesVAE(nn.Module):
 
         return loss.item()
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def _train(
         self, static: Tensor, temporal: Tensor, observation_times: Tensor
     ) -> Any:

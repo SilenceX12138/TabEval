@@ -7,7 +7,7 @@ from typing import Any, Dict, Optional, Tuple
 # third party
 import numpy as np
 import pandas as pd
-from pydantic import validate_arguments
+from pydantic import validate_call
 from sdmetrics.reports.single_table import QualityReport
 from sklearn.neighbors import NearestNeighbors
 from sklearn.preprocessing import MinMaxScaler
@@ -42,7 +42,7 @@ class DensityEvaluator(MetricEvaluator):
     def _evaluate(self, X_gt: DataLoader, X_syn: DataLoader, **kwargs) -> Dict:
         raise NotImplementedError("Subclasses must implement this evaluation method")
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def evaluate(self, X_gt: DataLoader, X_syn: DataLoader, **kwargs) -> Dict:
         # Create hashable representation of kwargs
         cache_file = (
@@ -57,7 +57,7 @@ class DensityEvaluator(MetricEvaluator):
         save_to_file(cache_file, results)
         return results
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def evaluate_default(
         self,
         X_gt: DataLoader,
@@ -87,7 +87,12 @@ class DensityEvaluator(MetricEvaluator):
             return tuple(self._make_hashable(item) for item in obj)
         elif isinstance(obj, set):
             # Sort set items to ensure consistent ordering
-            return tuple(sorted([self._make_hashable(item) for item in obj], key=lambda x: (str(type(x)), str(x))))
+            return tuple(
+                sorted(
+                    [self._make_hashable(item) for item in obj],
+                    key=lambda x: (str(type(x)), str(x)),
+                )
+            )
         elif isinstance(obj, dict):
             # Sort by string representation of key type and then key value
             # This ensures consistent ordering even with mixed key types
@@ -140,14 +145,13 @@ class LowOrderMetrics(DensityEvaluator):
     def timestamp(self):
         return "2025-08-09"
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def _evaluate(
         self,
         X: DataLoader,
         X_syn: DataLoader,
         metadata: dict,
     ) -> Dict:
-
         report = QualityReport()
         report.generate(X.dataframe(), X_syn.dataframe(), metadata, verbose=False)
         metric_dict = report.get_properties().set_index("Property").to_dict()["Score"]
@@ -190,14 +194,13 @@ class HighOrderMetrics(DensityEvaluator):
     def timestamp(self):
         return "2025-08-09"
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def metrics(
         self,
         X: np.ndarray,
         X_syn: np.ndarray,
         emb_center: Optional[np.ndarray] = None,
     ) -> Tuple:
-
         if emb_center is None:
             emb_center = np.mean(X, axis=0)
 
@@ -227,7 +230,9 @@ class HighOrderMetrics(DensityEvaluator):
 
         real_synth_closest = X_syn[real_to_synth_args]
 
-        real_synth_closest_d = np.sqrt(np.sum((real_synth_closest - synth_center) ** 2, axis=1))
+        real_synth_closest_d = np.sqrt(
+            np.sum((real_synth_closest - synth_center) ** 2, axis=1)
+        )
         closest_synth_Radii = np.quantile(real_synth_closest_d, alphas)
 
         for k in range(len(Radii)):
@@ -235,7 +240,10 @@ class HighOrderMetrics(DensityEvaluator):
             alpha_precision = np.mean(precision_audit_mask)
 
             beta_coverage = np.mean(
-                ((real_to_synth <= real_to_real) * (real_synth_closest_d <= closest_synth_Radii[k]))
+                (
+                    (real_to_synth <= real_to_real)
+                    * (real_synth_closest_d <= closest_synth_Radii[k])
+                )
             )
 
             alpha_precision_curve.append(alpha_precision)
@@ -248,12 +256,16 @@ class HighOrderMetrics(DensityEvaluator):
         authen = real_to_real[real_to_real_args] < real_to_synth
         authenticity = np.mean(authen)
 
-        Delta_precision_alpha = 1 - np.sum(np.abs(np.array(alphas) - np.array(alpha_precision_curve))) / np.sum(alphas)
+        Delta_precision_alpha = 1 - np.sum(
+            np.abs(np.array(alphas) - np.array(alpha_precision_curve))
+        ) / np.sum(alphas)
 
         if Delta_precision_alpha < 0:
             raise RuntimeError("negative value detected for Delta_precision_alpha")
 
-        Delta_coverage_beta = 1 - np.sum(np.abs(np.array(alphas) - np.array(beta_coverage_curve))) / np.sum(alphas)
+        Delta_coverage_beta = 1 - np.sum(
+            np.abs(np.array(alphas) - np.array(beta_coverage_curve))
+        ) / np.sum(alphas)
 
         if Delta_coverage_beta < 0:
             raise RuntimeError("negative value detected for Delta_coverage_beta")
@@ -288,28 +300,42 @@ class HighOrderMetrics(DensityEvaluator):
         if self._task_type != "survival_analysis":
             if hasattr(X, "target_column") and hasattr(X_gt_norm, X.target_column):
                 X_gt_norm = X_gt_norm.drop(columns=[X.target_column])
-            if hasattr(X_syn, "target_column") and hasattr(X_syn_norm, X_syn.target_column):
+            if hasattr(X_syn, "target_column") and hasattr(
+                X_syn_norm, X_syn.target_column
+            ):
                 X_syn_norm = X_syn_norm.drop(columns=[X_syn.target_column])
         scaler = MinMaxScaler().fit(X_gt_norm)
         if hasattr(X, "target_column"):
             X_gt_norm_df = pd.DataFrame(
                 scaler.transform(X_gt_norm),
-                columns=[col for col in X.train().dataframe().columns if col != X.target_column],
+                columns=[
+                    col
+                    for col in X.train().dataframe().columns
+                    if col != X.target_column
+                ],
             )
         else:
-            X_gt_norm_df = pd.DataFrame(scaler.transform(X_gt_norm), columns=X.train().dataframe().columns)
+            X_gt_norm_df = pd.DataFrame(
+                scaler.transform(X_gt_norm), columns=X.train().dataframe().columns
+            )
 
         if hasattr(X_syn, "target_column"):
             X_syn_norm_df = pd.DataFrame(
                 scaler.transform(X_syn_norm),
-                columns=[col for col in X_syn.dataframe().columns if col != X_syn.target_column],
+                columns=[
+                    col
+                    for col in X_syn.dataframe().columns
+                    if col != X_syn.target_column
+                ],
             )
         else:
-            X_syn_norm_df = pd.DataFrame(scaler.transform(X_syn_norm), columns=X_syn.dataframe().columns)
+            X_syn_norm_df = pd.DataFrame(
+                scaler.transform(X_syn_norm), columns=X_syn.dataframe().columns
+            )
 
         return (X_gt_norm_df, X_syn_norm_df)
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def _evaluate(
         self,
         X: DataLoader,

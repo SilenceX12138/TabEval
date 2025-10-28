@@ -9,8 +9,9 @@ from typing import Any, Dict, List, Optional, Union
 # third party
 import pandas as pd
 import torch
+
 # Necessary packages
-from pydantic import validate_arguments
+from pydantic import ConfigDict, validate_call
 
 # tabeval absolute
 import tabeval.logger as log
@@ -44,7 +45,7 @@ class GReaTPlugin(Plugin):
 
     """
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
     def __init__(
         self,
         n_iter: int = 100,
@@ -148,9 +149,11 @@ class GReaTPlugin(Plugin):
         Returns:
             GReaTPlugin: The fitted plugin.
         """
-        # GReaT is not designed to work with large datasets. We will sample 1000 rows
-        if X.shape[0] > 1000:
-            X = X.sample(1000, random_state=self.random_state)
+        # GReaT is not designed to work with large datasets. We will sample 3000 rows
+        if X.shape[0] > 3000:
+            X = X.sample(3000, random_state=self.random_state)
+
+        # Initialize the model
         self.model = TabularGReaT(
             X.dataframe(),
             n_iter=self.n_iter,
@@ -159,18 +162,26 @@ class GReaTPlugin(Plugin):
             batch_size=self.batch_size,
             train_kwargs=self.train_kwargs,
         )
+
+        # Set the conditional column
+        self.conditional_col = None
+        conditional_col = None
         if "cond" in kwargs and kwargs["cond"] is not None:
             if not isinstance(kwargs["cond"], str):
-                raise ValueError("Conditional column must be a string for GReaT fitting.")
+                raise ValueError(
+                    "Conditional column must be a string for GReaT fitting."
+                )
             self.conditional_col = kwargs["cond"]
             conditional_col = kwargs["cond"]
 
+        # Fit the model
         self.model.fit(
             X.dataframe(),
             conditional_col=conditional_col,
             resume_from_checkpoint=resume_from_checkpoint,
         )
         log.debug(self.model)
+
         return self
 
     def _generate(self, count: int, syn_schema: Schema, **kwargs: Any) -> pd.DataFrame:
@@ -187,10 +198,15 @@ class GReaTPlugin(Plugin):
         Returns:
             pd.DataFrame: The generated data.
         """
+        conditional_col_dist = None
         if "cond" in kwargs and kwargs["cond"] is not None:
             if isinstance(kwargs["cond"], str):
-                raise ValueError("Conditional column must be a list for GReaT generation.")
-            conditional_col_dist = pd.Series(kwargs["cond"]).value_counts(normalize=True).to_dict()
+                raise ValueError(
+                    "Conditional column must be a list for GReaT generation."
+                )
+            conditional_col_dist = (
+                pd.Series(kwargs["cond"]).value_counts(normalize=True).to_dict()
+            )
 
         return self._safe_generate(
             self.model.generate,

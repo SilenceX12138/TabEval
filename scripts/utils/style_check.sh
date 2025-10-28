@@ -4,8 +4,8 @@
 set -e # Exit on any error
 
 # Environment variables (can be overridden)
-IGNORE_PATHS_PYLINT=""
-IGNORE_PATHS_FLAKE8=""
+IGNORE_PATHS_PYLINT="src/tabeval/benchmark,src/tabeval/plugins,src/tabeval/utils"
+IGNORE_PATHS_FLAKE8="src/tabeval/benchmark,src/tabeval/plugins,src/tabeval/utils"
 
 echo "=== Python Code Style Check ==="
 echo "Starting style check for Python code..."

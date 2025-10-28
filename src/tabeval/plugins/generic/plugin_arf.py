@@ -9,12 +9,17 @@ from typing import Any, List, Union
 # third party
 import pandas as pd
 import torch
+
 # Necessary packages
-from pydantic import validate_arguments
+from pydantic import validate_call
 
 # tabeval absolute
 from tabeval.plugins.core.dataloader import DataLoader
-from tabeval.plugins.core.distribution import CategoricalDistribution, Distribution, IntegerDistribution
+from tabeval.plugins.core.distribution import (
+    CategoricalDistribution,
+    Distribution,
+    IntegerDistribution,
+)
 from tabeval.plugins.core.models.tabular_arf import TabularARF
 from tabeval.plugins.core.plugin import Plugin
 from tabeval.plugins.core.schema import Schema
@@ -43,7 +48,7 @@ class ARFPlugin(Plugin):
 
     """
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def __init__(
         self,
         # n_iter: int = 1000,
@@ -149,10 +154,13 @@ class ARFPlugin(Plugin):
             self.min_node_size,
             **kwargs,
         )
-        if "cond" in kwargs and kwargs["cond"] is not None:
-            raise NotImplementedError(
-                "conditional generation is not currently available for the Adversarial Random Forest (ARF) plugin."
-            )
+        if "cond" in kwargs:
+            if kwargs["cond"] is not None:
+                raise NotImplementedError(
+                    "conditional generation is not currently available for the Adversarial Random Forest (ARF) plugin."
+                )
+            kwargs.pop("cond")
+
         self.model.fit(X.dataframe(), **kwargs)
         return self
 

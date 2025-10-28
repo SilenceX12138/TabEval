@@ -4,7 +4,7 @@ from typing import Any
 # third party
 import numpy as np
 import pandas as pd
-from pydantic import validate_arguments
+from pydantic import validate_call
 from sklearn.manifold import TSNE
 
 # tabeval absolute
@@ -15,7 +15,7 @@ COLOR_PALETTE = ["#2b2d42", "#d90429"]
 LABELS = ["real", "syn"]
 
 
-@validate_arguments(config=dict(arbitrary_types_allowed=True))
+@validate_call(config=dict(arbitrary_types_allowed=True))
 def plot_marginal_comparison(
     plt: Any, X_gt: DataLoader, X_syn: DataLoader, normalize: bool = True
 ) -> None:
@@ -79,7 +79,7 @@ def plot_marginal_comparison(
         local_ax.legend()
 
 
-@validate_arguments(config=dict(arbitrary_types_allowed=True))
+@validate_call(config=dict(arbitrary_types_allowed=True))
 def plot_tsne(
     plt: Any,
     X_gt: DataLoader,

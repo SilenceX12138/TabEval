@@ -7,7 +7,7 @@ from typing import Any, Optional, Union
 import numpy as np
 import pandas as pd
 import torch
-from pydantic import validate_arguments
+from pydantic import validate_call
 
 # tabeval absolute
 from tabeval.utils.constants import DEVICE
@@ -70,7 +70,7 @@ class TabularAIM(metaclass=ABCMeta):
         self.num_marginals = num_marginals
         self.max_cells = max_cells
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def fit(
         self,
         X: pd.DataFrame,
@@ -110,7 +110,7 @@ class TabularAIM(metaclass=ABCMeta):
         self.model = AIM(self.epsilon, self.delta, max_model_size=self.max_model_size)
         return self
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def generate(
         self,
         count: int,

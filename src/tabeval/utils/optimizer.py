@@ -11,7 +11,11 @@ from sklearn.model_selection import train_test_split
 import tabeval.logger as log
 from tabeval.metrics.eval_detection import SyntheticDetectionMLP
 from tabeval.utils.redis_wrapper import RedisBackend
-from tabeval.utils.serialization import dataframe_cols_hash, load_from_file, save_to_file
+from tabeval.utils.serialization import (
+    dataframe_cols_hash,
+    load_from_file,
+    save_to_file,
+)
 
 threshold = 10
 

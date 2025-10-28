@@ -3,7 +3,6 @@ Reference: Kotelnikov, Akim et al. “TabDDPM: Modelling Tabular Data with Diffu
 """
 
 # stdlib
-from operator import index
 from pathlib import Path
 from typing import Any, List, Optional, Sequence
 
@@ -11,7 +10,7 @@ from typing import Any, List, Optional, Sequence
 import numpy as np
 import pandas as pd
 # Necessary packages
-from pydantic import validate_arguments
+from pydantic import validate_call
 
 # tabeval absolute
 from tabeval.metrics.weighted_metrics import WeightedMetrics
@@ -84,7 +83,7 @@ class TabDDPMPlugin(Plugin):
 
     """
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def __init__(
         self,
         *,
@@ -111,7 +110,7 @@ class TabDDPMPlugin(Plugin):
         workspace: Path = Path("logs/tabeval_workspace"),
         compress_dataset: bool = False,
         sampling_patience: int = 500,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         super().__init__(
             device=device,
@@ -119,7 +118,7 @@ class TabDDPMPlugin(Plugin):
             sampling_patience=sampling_patience,
             workspace=workspace,
             compress_dataset=compress_dataset,
-            **kwargs
+            **kwargs,
         )
 
         self.is_classification = is_classification
@@ -149,8 +148,6 @@ class TabDDPMPlugin(Plugin):
         self.encoder = TabularEncoder(
             continuous_encoder=continuous_encoder,
             cont_encoder_params=cont_encoder_params,
-            categorical_encoder="none",
-            cat_encoder_params=dict(),
         )
 
     @staticmethod

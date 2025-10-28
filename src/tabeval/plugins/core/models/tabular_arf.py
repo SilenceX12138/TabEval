@@ -5,7 +5,7 @@ from typing import Any, Union
 # third party
 import pandas as pd
 import torch
-from pydantic import validate_arguments
+from pydantic import validate_call
 
 try:
     # third party
@@ -111,7 +111,7 @@ class TabularARF(metaclass=ABCMeta):
                 categorical_cols.append(col)
         return categorical_cols
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def fit(
         self,
         X: pd.DataFrame,
@@ -133,7 +133,7 @@ class TabularARF(metaclass=ABCMeta):
         )
         return self
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def generate(
         self,
         count: int,
@@ -143,6 +143,8 @@ class TabularARF(metaclass=ABCMeta):
             samples = self.model.forge(n=count)
             return pd.DataFrame(samples)
         except Exception as e:
-            log.critical(f"Failed due to error: {e} Try with a higher values of min_node_size.")
+            log.critical(
+                f"Failed due to error: {e} Try with a higher values of min_node_size."
+            )
         samples = self.model.forge(n=count)
         return pd.DataFrame(samples)

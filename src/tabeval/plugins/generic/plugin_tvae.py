@@ -5,14 +5,19 @@ from typing import Any, List, Optional, Union
 # third party
 import numpy as np
 import pandas as pd
+
 # Necessary packages
-from pydantic import validate_arguments
+from pydantic import validate_call
 from torch.utils.data import sampler
 
 # tabeval absolute
 from tabeval.plugins.core.dataloader import DataLoader
-from tabeval.plugins.core.distribution import (CategoricalDistribution, Distribution, FloatDistribution,
-                                               IntegerDistribution)
+from tabeval.plugins.core.distribution import (
+    CategoricalDistribution,
+    Distribution,
+    FloatDistribution,
+    IntegerDistribution,
+)
 from tabeval.plugins.core.models.tabular_vae import TabularVAE
 from tabeval.plugins.core.plugin import Plugin
 from tabeval.plugins.core.schema import Schema
@@ -85,7 +90,7 @@ class TVAEPlugin(Plugin):
 
     """
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def __init__(
         self,
         n_iter: int = 1000,
@@ -114,7 +119,7 @@ class TVAEPlugin(Plugin):
         workspace: Path = Path("logs/tabeval_workspace"),
         compress_dataset: bool = False,
         sampling_patience: int = 500,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         super().__init__(
             device=device,
@@ -122,7 +127,7 @@ class TVAEPlugin(Plugin):
             sampling_patience=sampling_patience,
             workspace=workspace,
             compress_dataset=compress_dataset,
-            **kwargs
+            **kwargs,
         )
         self.n_units_embedding = n_units_embedding
         self.decoder_n_layers_hidden = decoder_n_layers_hidden

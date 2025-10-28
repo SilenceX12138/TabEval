@@ -3,7 +3,7 @@ from typing import Dict, List
 
 # third party
 import pandas as pd
-from pydantic import validate_arguments
+from pydantic import validate_call
 from sklearn.preprocessing import LabelEncoder
 from xgboost import XGBClassifier, XGBRegressor
 
@@ -11,7 +11,7 @@ from xgboost import XGBClassifier, XGBRegressor
 from .evaluation import evaluate_classifier, evaluate_regression
 
 
-@validate_arguments(config=dict(arbitrary_types_allowed=True))
+@validate_call(config=dict(arbitrary_types_allowed=True))
 def compress_dataset(
     df: pd.DataFrame,
     cat_limit: int = 10,
@@ -119,8 +119,10 @@ def compress_dataset(
     return df, context
 
 
-@validate_arguments(config=dict(arbitrary_types_allowed=True))
-def decompress_dataset(df: pd.DataFrame, context: Dict, cat_limit: int = 10) -> pd.DataFrame:
+@validate_call(config=dict(arbitrary_types_allowed=True))
+def decompress_dataset(
+    df: pd.DataFrame, context: Dict, cat_limit: int = 10
+) -> pd.DataFrame:
     if "encoders" not in context:
         raise ValueError("Invalid context. missing encoders")
 
@@ -146,7 +148,9 @@ def decompress_dataset(df: pd.DataFrame, context: Dict, cat_limit: int = 10) -> 
         decoded = df[cat_group].str.split(" ", n=-1, expand=True)
 
         if decoded.shape[1] != len(src_cols):
-            raise ValueError(f"Invalid decoding shape {decoded.shape} expected {len(src_cols)}")
+            raise ValueError(
+                f"Invalid decoding shape {decoded.shape} expected {len(src_cols)}"
+            )
 
         df[src_cols] = decoded.astype(dtypes.reset_index(drop=True))
         df = df.drop(columns=[cat_group])
@@ -167,7 +171,9 @@ def decompress_dataset(df: pd.DataFrame, context: Dict, cat_limit: int = 10) -> 
             vmin = context["compressers"][col]["min"]
             vmax = context["compressers"][col]["max"]
 
-            if pd.Series(src_cols).isin(df.columns).sum() != len(src_cols):  # need to decode something else first
+            if pd.Series(src_cols).isin(df.columns).sum() != len(
+                src_cols
+            ):  # need to decode something else first
                 continue
 
             src_covs = df[src_cols]
