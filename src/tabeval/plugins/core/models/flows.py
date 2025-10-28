@@ -8,12 +8,17 @@ import torch
 from nflows.distributions.normal import StandardNormal
 from nflows.flows.base import Flow
 from nflows.nn.nets.resnet import ResidualNet
-from nflows.transforms.autoregressive import (MaskedAffineAutoregressiveTransform,
-                                              MaskedPiecewiseQuadraticAutoregressiveTransform,
-                                              MaskedPiecewiseRationalQuadraticAutoregressiveTransform)
+from nflows.transforms.autoregressive import (
+    MaskedAffineAutoregressiveTransform,
+    MaskedPiecewiseQuadraticAutoregressiveTransform,
+    MaskedPiecewiseRationalQuadraticAutoregressiveTransform,
+)
 from nflows.transforms.base import CompositeTransform
-from nflows.transforms.coupling import (AffineCouplingTransform, PiecewiseQuadraticCouplingTransform,
-                                        PiecewiseRationalQuadraticCouplingTransform)
+from nflows.transforms.coupling import (
+    AffineCouplingTransform,
+    PiecewiseQuadraticCouplingTransform,
+    PiecewiseRationalQuadraticCouplingTransform,
+)
 from nflows.transforms.lu import LULinear
 from nflows.transforms.permutations import RandomPermutation
 from nflows.transforms.svd import SVDLinear

@@ -3,7 +3,7 @@ import glob
 from os.path import basename, dirname, isfile, join
 
 # third party
-from pydantic import validate_arguments
+from pydantic import validate_call
 
 # tabeval absolute
 from tabeval.plugins.core.plugin import Plugin, PluginLoader  # noqa: F401,E402
@@ -24,7 +24,7 @@ for cat in def_categories:
 
 
 class Plugins(PluginLoader):
-    @validate_arguments
+    @validate_call
     def __init__(self, categories: list = def_categories) -> None:
         plugins_to_use = []
         for cat in categories:

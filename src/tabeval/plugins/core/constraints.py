@@ -4,7 +4,7 @@ from typing import Any, Generator, List, Tuple
 # third party
 import numpy as np
 import pandas as pd
-from pydantic import BaseModel, field_validator, validate_arguments
+from pydantic import BaseModel, field_validator, validate_call
 
 # tabeval absolute
 import tabeval.logger as log
@@ -81,7 +81,7 @@ class Constraints(BaseModel):
 
         return rules
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def _eval(self, X: pd.DataFrame, feature: str, op: str, operand: Any) -> pd.Index:
         """Evaluation primitive.
 
@@ -111,7 +111,7 @@ class Constraints(BaseModel):
         else:
             raise RuntimeError("unsupported operation", op)
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def _correct(
         self, X: pd.DataFrame, feature: str, op: str, operand: Any
     ) -> pd.DataFrame:
@@ -141,7 +141,7 @@ class Constraints(BaseModel):
 
         return X
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def filter(self, X: pd.DataFrame) -> pd.DataFrame:
         """Apply the constraints to a DataFrame X.
 
@@ -171,7 +171,7 @@ class Constraints(BaseModel):
                 )
         return res
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def match(self, X: pd.DataFrame) -> pd.DataFrame:
         """Apply the constraints to a DataFrame X and return the filtered dataset.
 
@@ -184,7 +184,7 @@ class Constraints(BaseModel):
 
         return X[self.filter(X)]
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def is_valid(self, X: pd.DataFrame) -> bool:
         """Checks if all the rows in X meet the constraints.
 

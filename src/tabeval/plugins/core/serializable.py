@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any, Optional
 
 # third party
-from pydantic import validate_arguments
+from pydantic import validate_call
 
 # tabeval absolute
 from tabeval.utils.serialization import load as deserialize
@@ -83,12 +83,12 @@ class Serializable:
     def save(self) -> bytes:
         return serialize(self.save_dict())
 
-    @validate_arguments
+    @validate_call
     def save_to_file(self, path: Path) -> bytes:
         raise NotImplementedError()
 
     @staticmethod
-    # @validate_arguments
+    # @validate_call
     def load_dict(representation: dict) -> Any:
         if "source" not in representation or representation["source"] != "tabeval":
             raise ValueError("Invalid tabeval object")
@@ -124,11 +124,7 @@ class Serializable:
         for key in representation["data"]:
             val = representation["data"][key]
 
-            if (
-                isinstance(val, dict)
-                and "source" in val
-                and val["source"] == "tabeval"
-            ):
+            if isinstance(val, dict) and "source" in val and val["source"] == "tabeval":
                 obj_dict[key] = Serializable.load_dict(val)
             else:
                 obj_dict[key] = val
@@ -138,7 +134,7 @@ class Serializable:
         return obj
 
     @staticmethod
-    @validate_arguments
+    @validate_call
     def load(buff: bytes) -> Any:
         representation = deserialize(buff)
 

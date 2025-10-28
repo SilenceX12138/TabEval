@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 import torch
 from geomloss import SamplesLoss
-from pydantic import validate_arguments
+from pydantic import validate_call
 from scipy.stats import multivariate_normal
 from sklearn.metrics import (accuracy_score, auc, average_precision_score, precision_recall_curve, roc_auc_score,
                              roc_curve)
@@ -23,8 +23,10 @@ from tabeval.plugins.core.models import bnaf
 from tabeval.utils.constants import DEVICE
 
 
-@validate_arguments(config=dict(arbitrary_types_allowed=True))
-def get_frequency(X_gt: pd.DataFrame, X_synth: pd.DataFrame, n_histogram_bins: int = 10) -> dict:
+@validate_call(config=dict(arbitrary_types_allowed=True))
+def get_frequency(
+    X_gt: pd.DataFrame, X_synth: pd.DataFrame, n_histogram_bins: int = 10
+) -> dict:
     """Get percentual frequencies for each possible real categorical value.
 
     Returns:
@@ -108,12 +110,18 @@ def evaluate_auc(
 
         y_test = label_binarize(y_test, classes=classes)
 
-        fpr["micro"], tpr["micro"], _ = roc_curve(y_test.ravel(), y_pred_proba_tmp.ravel())
+        fpr["micro"], tpr["micro"], _ = roc_curve(
+            y_test.ravel(), y_pred_proba_tmp.ravel()
+        )
         roc_auc["micro"] = auc(fpr["micro"], tpr["micro"])
 
-        precision["micro"], recall["micro"], _ = precision_recall_curve(y_test.ravel(), y_pred_proba_tmp.ravel())
+        precision["micro"], recall["micro"], _ = precision_recall_curve(
+            y_test.ravel(), y_pred_proba_tmp.ravel()
+        )
 
-        average_precision["micro"] = average_precision_score(y_test, y_pred_proba_tmp, average="micro")
+        average_precision["micro"] = average_precision_score(
+            y_test, y_pred_proba_tmp, average="micro"
+        )
 
         aucroc = roc_auc["micro"]
         aucprc = average_precision["micro"]
@@ -173,10 +181,12 @@ class normal_func_feat:
 
 class GeneratorInterface(metaclass=ABCMeta):
     @abstractmethod
-    def fit(self, data: pd.DataFrame) -> "GeneratorInterface": ...
+    def fit(self, data: pd.DataFrame) -> "GeneratorInterface":
+        pass
 
     @abstractmethod
-    def generate(self, count: int) -> pd.DataFrame: ...
+    def generate(self, count: int) -> pd.DataFrame:
+        pass
 
 
 # Domias helper functions
@@ -187,7 +197,9 @@ def compute_wd(
     X_ = X.copy()
     X_syn_ = X_syn.copy()
     if len(X_) > len(X_syn_):
-        X_syn_ = np.concatenate([X_syn_, np.zeros((len(X_) - len(X_syn_), X_.shape[1]))])
+        X_syn_ = np.concatenate(
+            [X_syn_, np.zeros((len(X_) - len(X_syn_), X_.shape[1]))]
+        )
 
     scaler = MinMaxScaler().fit(X_)
 
@@ -214,7 +226,9 @@ def load_dataset(
     torch.utils.data.DataLoader,
 ]:
     if data_train is not None:
-        dataset_train = torch.utils.data.TensorDataset(torch.from_numpy(data_train).float().to(device))
+        dataset_train = torch.utils.data.TensorDataset(
+            torch.from_numpy(data_train).float().to(device)
+        )
         if data_valid is None:
             log.debug("No validation set passed")
             data_valid = np.random.randn(*data_train.shape)
@@ -222,17 +236,27 @@ def load_dataset(
             log.debug("No test set passed")
             data_test = np.random.randn(*data_train.shape)
 
-        dataset_valid = torch.utils.data.TensorDataset(torch.from_numpy(data_valid).float().to(device))
+        dataset_valid = torch.utils.data.TensorDataset(
+            torch.from_numpy(data_valid).float().to(device)
+        )
 
-        dataset_test = torch.utils.data.TensorDataset(torch.from_numpy(data_test).float().to(device))
+        dataset_test = torch.utils.data.TensorDataset(
+            torch.from_numpy(data_test).float().to(device)
+        )
     else:
         raise RuntimeError()
 
-    data_loader_train = torch.utils.data.DataLoader(dataset_train, batch_size=batch_dim, shuffle=True)
+    data_loader_train = torch.utils.data.DataLoader(
+        dataset_train, batch_size=batch_dim, shuffle=True
+    )
 
-    data_loader_valid = torch.utils.data.DataLoader(dataset_valid, batch_size=batch_dim, shuffle=False)
+    data_loader_valid = torch.utils.data.DataLoader(
+        dataset_valid, batch_size=batch_dim, shuffle=False
+    )
 
-    data_loader_test = torch.utils.data.DataLoader(dataset_test, batch_size=batch_dim, shuffle=False)
+    data_loader_test = torch.utils.data.DataLoader(
+        dataset_test, batch_size=batch_dim, shuffle=False
+    )
 
     return data_loader_train, data_loader_valid, data_loader_test
 
@@ -326,7 +350,11 @@ def load_model(
 
 def compute_log_p_x(model: nn.Module, x_mb: torch.Tensor) -> torch.Tensor:
     y_mb, log_diag_j_mb = model(x_mb)
-    log_p_y_mb = torch.distributions.Normal(torch.zeros_like(y_mb), torch.ones_like(y_mb)).log_prob(y_mb).sum(-1)
+    log_p_y_mb = (
+        torch.distributions.Normal(torch.zeros_like(y_mb), torch.ones_like(y_mb))
+        .log_prob(y_mb)
+        .sum(-1)
+    )
     return log_p_y_mb + log_diag_j_mb
 
 
@@ -364,7 +392,10 @@ def train(
         train_loss = torch.stack(train_loss).mean()
         optimizer.swap()
         validation_loss = -torch.stack(
-            [compute_log_p_x(model, x_mb).mean().detach() for x_mb, in data_loader_valid],
+            [
+                compute_log_p_x(model, x_mb).mean().detach()
+                for (x_mb,) in data_loader_valid
+            ],
             -1,
         ).mean()
         optimizer.swap()
@@ -380,7 +411,9 @@ def train(
 
         stop = scheduler.step(
             validation_loss,
-            callback_best=save_model(model, optimizer, epoch + 1, save=save, workspace=workspace),
+            callback_best=save_model(
+                model, optimizer, epoch + 1, save=save, workspace=workspace
+            ),
             callback_reduce=load_model(model, optimizer, workspace=workspace),
         )
 
@@ -390,10 +423,13 @@ def train(
     load_model(model, optimizer, workspace=workspace)()
     optimizer.swap()
     validation_loss = -torch.stack(
-        [compute_log_p_x(model, x_mb).mean().detach() for x_mb, in data_loader_valid],
+        [compute_log_p_x(model, x_mb).mean().detach() for (x_mb,) in data_loader_valid],
         -1,
     ).mean()
-    test_loss = -torch.stack([compute_log_p_x(model, x_mb).mean().detach() for x_mb, in data_loader_test], -1).mean()
+    test_loss = -torch.stack(
+        [compute_log_p_x(model, x_mb).mean().detach() for (x_mb,) in data_loader_test],
+        -1,
+    ).mean()
 
     log.debug(
         f"""
@@ -474,7 +510,9 @@ def density_estimator_trainer(
     )
 
     log.debug("Creating optimizer..")
-    optimizer = bnaf.Adam(model.parameters(), lr=learning_rate, amsgrad=True, polyak=polyak)
+    optimizer = bnaf.Adam(
+        model.parameters(), lr=learning_rate, amsgrad=True, polyak=polyak
+    )
 
     log.debug("Creating scheduler..")
 

@@ -11,9 +11,7 @@ import numpy as np
 import pandas as pd
 import torch
 # Necessary packages
-from pydantic import validate_arguments
-from torch.utils.data import sampler
-
+from pydantic import validate_call
 # tabeval absolute
 from tabeval.plugins.core.dataloader import DataLoader
 from tabeval.plugins.core.distribution import (CategoricalDistribution, Distribution, FloatDistribution,
@@ -21,6 +19,7 @@ from tabeval.plugins.core.distribution import (CategoricalDistribution, Distribu
 from tabeval.plugins.core.plugin import Plugin
 from tabeval.plugins.core.schema import Schema
 from tabeval.utils.constants import DEVICE
+from torch.utils.data import sampler
 
 try:
     # tabeval absolute
@@ -53,7 +52,7 @@ class GOGGLEPlugin(Plugin):
 
     """
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def __init__(
         self,
         n_iter: int = 1000,
@@ -84,7 +83,7 @@ class GOGGLEPlugin(Plugin):
         workspace: Path = Path("logs/tabeval_workspace"),
         compress_dataset: bool = False,
         dataloader_sampler: Optional[sampler.Sampler] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         """
         .. inheritance-diagram:: tabeval.plugins.generic.plugin_goggle.GOGGLEPlugin
@@ -204,9 +203,16 @@ class GOGGLEPlugin(Plugin):
         ]
 
     def _fit(self, X: DataLoader, *args: Any, **kwargs: Any) -> "GOGGLEPlugin":
+        if "cond" in kwargs:
+            if kwargs["cond"] is not None:
+                raise NotImplementedError("conditional generation is not currently available for the goggle plugin.")
+            kwargs.pop("cond")
+
         # Goggle is not designed to work with large datasets. We will sample 1000 rows
         if X.shape[0] > 1000:
             X = X.sample(1000, random_state=self.random_state)
+
+        # Initialize the Goggle model
         self.model = TabularGoggle(
             X.dataframe(),
             n_iter=self.n_iter,
@@ -235,8 +241,7 @@ class GOGGLEPlugin(Plugin):
             random_state=self.random_state,
             **kwargs,
         )
-        if "cond" in kwargs and kwargs["cond"] is not None:
-            raise NotImplementedError("conditional generation is not currently available for the goggle plugin.")
+
         self.model.fit(X.dataframe(), **kwargs)
         return self
 

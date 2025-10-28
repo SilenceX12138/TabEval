@@ -4,7 +4,7 @@ from typing import Any, Optional
 # third party
 import pandas as pd
 import torch
-from pydantic import validate_arguments
+from pydantic import validate_call
 from torch import nn
 
 # tabeval absolute
@@ -77,7 +77,7 @@ class TabularFlows(nn.Module):
             Metric evaluator
     """
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def __init__(
         self,
         X: pd.DataFrame,
@@ -132,18 +132,18 @@ class TabularFlows(nn.Module):
             patience_metric=patience_metric,
         )
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def encode(self, X: pd.DataFrame) -> pd.DataFrame:
         return self.encoder.transform(X)
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def decode(self, X: pd.DataFrame) -> pd.DataFrame:
         return self.encoder.inverse_transform(X)
 
     def get_encoder(self) -> TabularEncoder:
         return self.encoder
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def fit(
         self,
         X: pd.DataFrame,
@@ -158,6 +158,6 @@ class TabularFlows(nn.Module):
         samples = self.model.generate(count)
         return self.decode(pd.DataFrame(samples))
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def forward(self, count: int) -> torch.Tensor:
         return self.model.forward(count)

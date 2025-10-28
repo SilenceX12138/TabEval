@@ -4,13 +4,17 @@ from typing import Any, List, Optional
 
 # third party
 import pandas as pd
-from pydantic import validate_arguments
+from pydantic import validate_call
 
 # tabeval absolute
 from tabeval.metrics.weighted_metrics import WeightedMetrics
 from tabeval.plugins.core.dataloader import DataLoader
-from tabeval.plugins.core.distribution import (CategoricalDistribution, Distribution, FloatDistribution,
-                                               IntegerDistribution)
+from tabeval.plugins.core.distribution import (
+    CategoricalDistribution,
+    Distribution,
+    FloatDistribution,
+    IntegerDistribution,
+)
 from tabeval.plugins.core.models.flows import NormalizingFlows
 from tabeval.plugins.core.models.tabular_flows import TabularFlows
 from tabeval.plugins.core.plugin import Plugin
@@ -103,7 +107,7 @@ class NormalizingFlowsPlugin(Plugin):
 
     """
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def __init__(
         self,
         n_iter: int = 1000,

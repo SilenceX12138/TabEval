@@ -8,7 +8,7 @@ from typing import Callable, Dict, Optional
 import numpy as np
 import pandas as pd
 import torch
-from pydantic import validate_arguments
+from pydantic import validate_call
 
 # tabeval absolute
 from tabeval.metrics.representations.OneClass import OneClassLayer
@@ -43,7 +43,7 @@ class MetricEvaluator(metaclass=ABCMeta):
             Whether to use cache. If True, it will try to load saved results in workspace directory where possible.
     """
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def __init__(
         self,
         reduction: str = "mean",
@@ -69,25 +69,30 @@ class MetricEvaluator(metaclass=ABCMeta):
 
         workspace.mkdir(parents=True, exist_ok=True)
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     @abstractmethod
-    def evaluate(self, X_gt: DataLoader, X_syn: DataLoader) -> Dict: ...
+    def evaluate(self, X_gt: DataLoader, X_syn: DataLoader) -> Dict:
+        pass
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     @abstractmethod
-    def evaluate_default(self, X_gt: DataLoader, X_syn: DataLoader) -> float: ...
-
-    @staticmethod
-    @abstractmethod
-    def direction() -> str: ...
+    def evaluate_default(self, X_gt: DataLoader, X_syn: DataLoader) -> float:
+        pass
 
     @staticmethod
     @abstractmethod
-    def type() -> str: ...
+    def direction() -> str:
+        pass
 
     @staticmethod
     @abstractmethod
-    def name() -> str: ...
+    def type() -> str:
+        pass
+
+    @staticmethod
+    @abstractmethod
+    def name() -> str:
+        pass
 
     @classmethod
     def fqdn(cls) -> str:
@@ -108,7 +113,9 @@ class MetricEvaluator(metaclass=ABCMeta):
     def _get_oneclass_model(self, X_gt: np.ndarray) -> OneClassLayer:
         X_hash = dataframe_hash(pd.DataFrame(X_gt))
 
-        cache_file = self._workspace / f"sc_metric_cache_model_oneclass_{X_hash}_{platform.python_version()}.bkp"
+        cache_file = (
+            self._workspace / f"sc_metric_cache_model_oneclass_{X_hash}_{platform.python_version()}_{DEVICE}.bkp"
+        )
         if cache_file.exists() and self._use_cache:
             return load_from_file(cache_file)
 

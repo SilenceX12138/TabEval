@@ -4,11 +4,11 @@ from typing import Dict, List, Optional, Union
 
 # third party
 import pandas as pd
-from pydantic import validate_arguments
-
+from pydantic import validate_call
 # tabeval absolute
 from tabeval.plugins.core.dataloader import DataLoader, GenericDataLoader, create_from_info
 
+from .eval_detection import SyntheticDetectionMLP
 # tabeval relative
 from .eval_privacy import DCR
 from .scores import ScoreEvaluator
@@ -16,12 +16,14 @@ from .scores import ScoreEvaluator
 standard_metrics = [
     # privacy tests
     DCR,
+    # synthetic detection tests
+    SyntheticDetectionMLP,
 ]
 
 
 class Metrics:
     @staticmethod
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def evaluate(
         X_gt: Union[DataLoader, pd.DataFrame],
         X_syn: Union[DataLoader, pd.DataFrame],

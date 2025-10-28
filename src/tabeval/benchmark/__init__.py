@@ -11,7 +11,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
 import pandas as pd
 from IPython.display import display
-from pydantic import validate_arguments
+from pydantic import validate_call
 
 # tabeval absolute
 import tabeval.logger as log
@@ -39,7 +39,7 @@ def print_score(mean: pd.Series, std: pd.Series) -> pd.Series:
 
 class Benchmarks:
     @staticmethod
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def evaluate(
         tests: List[Tuple[str, str, dict]],  # test name, plugin name, plugin args
         X: DataLoader,
@@ -319,7 +319,7 @@ class Benchmarks:
         return out
 
     @staticmethod
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def print(
         results: Dict,
         only_comparatives: bool = True,
@@ -351,7 +351,7 @@ class Benchmarks:
             print()
 
     @staticmethod
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def highlight(
         results: Dict,
     ) -> None:

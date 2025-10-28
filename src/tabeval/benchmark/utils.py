@@ -7,7 +7,7 @@ from typing import Any, Dict, Optional
 # third party
 import numpy as np
 import pandas as pd
-from pydantic import validate_arguments
+from pydantic import validate_call
 from typing_extensions import Literal
 
 # tabeval absolute
@@ -31,7 +31,9 @@ def calculate_fair_aug_sample_size(
     X_train: pd.DataFrame,
     fairness_column: Optional[str],  # a categorical column of K levels
     rule: Literal["equal", "log", "ad-hoc"],
-    ad_hoc_augment_vals: Optional[Dict[Any, int]] = None,  # Only required for rule == "ad-hoc"
+    ad_hoc_augment_vals: Optional[
+        Dict[Any, int]
+    ] = None,  # Only required for rule == "ad-hoc"
 ) -> Dict:
     """Calculate how many samples to augment.
 
@@ -64,7 +66,9 @@ def calculate_fair_aug_sample_size(
         log_coefficient = majority_size / math.log(majority_size)
 
         augmentation_counts = {
-            fair_col_val: (majority_size - round(math.log(fair_col_count) * log_coefficient))
+            fair_col_val: (
+                majority_size - round(math.log(fair_col_count) * log_coefficient)
+            )
             for fair_col_val, fair_col_count in fairness_col_counts.items()
         }
     elif rule == "ad-hoc":
@@ -74,13 +78,19 @@ def calculate_fair_aug_sample_size(
                 "When augmenting with an `ad-hoc` method, ad_hoc_augment_vals must be a dictionary, where the dictionary keys are the values of the fairness_column and the dictionary values are the number of records to augment."
             )
         else:
-            if not set(ad_hoc_augment_vals.keys()).issubset(set(X_train[fairness_column].values)):
+            if not set(ad_hoc_augment_vals.keys()).issubset(
+                set(X_train[fairness_column].values)
+            ):
                 raise ValueError(
                     "ad_hoc_augment_vals must be a dictionary, where the dictionary keys are the values of the fairness_column and the dictionary values are the number of records to augment."
                 )
-            elif set(X_train[fairness_column].values) != set(ad_hoc_augment_vals.keys()):
+            elif set(X_train[fairness_column].values) != set(
+                ad_hoc_augment_vals.keys()
+            ):
                 ad_hoc_augment_vals = {
-                    k: v for k, v in ad_hoc_augment_vals.items() if k in set(X_train[fairness_column].values)
+                    k: v
+                    for k, v in ad_hoc_augment_vals.items()
+                    if k in set(X_train[fairness_column].values)
                 }
 
             augmentation_counts = ad_hoc_augment_vals
@@ -88,13 +98,15 @@ def calculate_fair_aug_sample_size(
     return augmentation_counts
 
 
-@validate_arguments(config=dict(arbitrary_types_allowed=True))
+@validate_call(config=dict(arbitrary_types_allowed=True))
 def _generate_synthetic_data(
     X_train: DataLoader,
     augment_generator: Any,
     strict: bool = True,
     rule: Literal["equal", "log", "ad-hoc"] = "equal",
-    ad_hoc_augment_vals: Optional[Dict[Any, int]] = None,  # Only required for rule == "ad-hoc"
+    ad_hoc_augment_vals: Optional[
+        Dict[Any, int]
+    ] = None,  # Only required for rule == "ad-hoc"
     synthetic_constraints: Optional[Constraints] = None,
     **generate_kwargs: Any,
 ) -> pd.DataFrame:
@@ -119,7 +131,11 @@ def _generate_synthetic_data(
     if not strict:
         # set count equal to the total number of records required according to calculate_fair_aug_sample_size
         count = sum(augmentation_counts.values())
-        cond = pd.Series(np.repeat(list(augmentation_counts.keys()), list(augmentation_counts.values())))
+        cond = pd.Series(
+            np.repeat(
+                list(augmentation_counts.keys()), list(augmentation_counts.values())
+            )
+        )
         syn_data = augment_generator.generate(
             count=count,
             cond=cond,
@@ -130,19 +146,27 @@ def _generate_synthetic_data(
         syn_data_list = []
         for fairness_value, count in augmentation_counts.items():
             if count > 0:
-                constraints = Constraints(rules=[(X_train.get_fairness_column(), "==", fairness_value)])
-                syn_data_list.append(augment_generator.generate(count=count, constraints=constraints).dataframe())
+                constraints = Constraints(
+                    rules=[(X_train.get_fairness_column(), "==", fairness_value)]
+                )
+                syn_data_list.append(
+                    augment_generator.generate(
+                        count=count, constraints=constraints
+                    ).dataframe()
+                )
         syn_data = pd.concat(syn_data_list)
     return syn_data
 
 
-@validate_arguments(config=dict(arbitrary_types_allowed=True))
+@validate_call(config=dict(arbitrary_types_allowed=True))
 def augment_data(
     X_train: DataLoader,
     augment_generator: Any,
     strict: bool = False,
     rule: Literal["equal", "log", "ad-hoc"] = "equal",
-    ad_hoc_augment_vals: Optional[Dict[Any, int]] = None,  # Only required for rule == "ad-hoc"
+    ad_hoc_augment_vals: Optional[
+        Dict[Any, int]
+    ] = None,  # Only required for rule == "ad-hoc"
     synthetic_constraints: Optional[Constraints] = None,
     **generate_kwargs: Any,
 ) -> DataLoader:

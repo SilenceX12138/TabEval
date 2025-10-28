@@ -12,7 +12,7 @@ import pandas as pd
 from autogluon.core.models import AbstractModel
 from autogluon.features.generators import LabelEncoderFeatureGenerator
 from autogluon.tabular import TabularPredictor
-from pydantic import validate_arguments
+from pydantic import validate_call
 
 # tabeval absolute
 from tabeval.metrics.core import MetricEvaluator
@@ -44,7 +44,7 @@ class StructureEvaluator(MetricEvaluator):
     def _evaluate(self, X_gt: DataLoader, X_syn: DataLoader, **kwargs) -> Dict:
         raise NotImplementedError("Subclasses must implement this evaluation method")
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def evaluate(self, X_gt: DataLoader, X_syn: DataLoader, **kwargs) -> Dict:
         # Create hashable representation of kwargs
         cache_file = (
@@ -59,7 +59,7 @@ class StructureEvaluator(MetricEvaluator):
         save_to_file(cache_file, results)
         return results
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def evaluate_default(
         self,
         X_gt: DataLoader,
@@ -89,7 +89,12 @@ class StructureEvaluator(MetricEvaluator):
             return tuple(self._make_hashable(item) for item in obj)
         elif isinstance(obj, set):
             # Sort set items to ensure consistent ordering
-            return tuple(sorted([self._make_hashable(item) for item in obj], key=lambda x: (str(type(x)), str(x))))
+            return tuple(
+                sorted(
+                    [self._make_hashable(item) for item in obj],
+                    key=lambda x: (str(type(x)), str(x)),
+                )
+            )
         elif isinstance(obj, dict):
             # Sort by string representation of key type and then key value
             # This ensures consistent ordering even with mixed key types
@@ -142,7 +147,7 @@ class UtilityPerFeature(StructureEvaluator):
     def timestamp(self):
         return "2025-08-09"
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def _evaluate(
         self,
         X: DataLoader,
@@ -173,7 +178,10 @@ class UtilityPerFeature(StructureEvaluator):
             predictor = TabularPredictor(
                 label=col,
                 path=os.path.join(
-                    self._workspace, "AutogluonModels", time.strftime("%Y%m%d_%H%M%S"), str(hash(str(column_list)))
+                    self._workspace,
+                    "AutogluonModels",
+                    time.strftime("%Y%m%d_%H%M%S"),
+                    str(hash(str(column_list))),
                 ),
                 log_to_file=True,
                 verbosity=0,
@@ -190,11 +198,17 @@ class UtilityPerFeature(StructureEvaluator):
             # e.g., run 1 trained an XGB model on dataset A, and run 2 trained another XGB model on dataset B
             # Then run 1 may evaluate the XGB from run 2, thus leading to crashed runs
             if predictor.problem_type == "regression":
-                leaderboard = predictor.leaderboard(X, extra_metrics=["root_mean_squared_error"])
+                leaderboard = predictor.leaderboard(
+                    X, extra_metrics=["root_mean_squared_error"]
+                )
                 target2regression_score_mean[col] = [leaderboard["score_test"].mean()]
             else:
-                leaderboard = predictor.leaderboard(X, extra_metrics=["balanced_accuracy"])
-                target2classification_score_mean[col] = [leaderboard["balanced_accuracy"].mean()]
+                leaderboard = predictor.leaderboard(
+                    X, extra_metrics=["balanced_accuracy"]
+                )
+                target2classification_score_mean[col] = [
+                    leaderboard["balanced_accuracy"].mean()
+                ]
 
         return {
             "negative_RMSE": target2regression_score_mean,
@@ -220,7 +234,9 @@ class CustomTabPFNModel(AbstractModel):
         if self._feature_generator.features_in:
             # This converts categorical features to numeric via stateful label encoding.
             X = X.copy()
-            X[self._feature_generator.features_in] = self._feature_generator.transform(X=X)
+            X[self._feature_generator.features_in] = self._feature_generator.transform(
+                X=X
+            )
         # Add a fillna call to handle missing values.
         # Some algorithms will be able to handle NaN values internally (LightGBM).
         # In those cases, you can simply pass the NaN values into the inner model.
@@ -237,7 +253,6 @@ class CustomTabPFNModel(AbstractModel):
         # time_limit=None,  # time limit in seconds (ignored in tutorial)
         **kwargs,
     ):  # kwargs includes many other potential inputs, refer to AbstractModel documentation for details
-
         # Limit the number of rows to 10000 for training.
         if X.shape[0] > 10000:
             # If the training data is large, we will use a smaller subset of the data to fit the feature generator.
@@ -259,7 +274,9 @@ class CustomTabPFNModel(AbstractModel):
             model_cls = TabPFNClassifier
             # Limit the number of classes to 10 for training.
             if len(y.unique()) > 10:
-                raise ValueError("TabPFN only supports up to 10 classes. Please use a different model for this task.")
+                raise ValueError(
+                    "TabPFN only supports up to 10 classes. Please use a different model for this task."
+                )
 
         # Make sure to call preprocess on X near the start of `_fit`.
         # This is necessary because the data is converted via preprocess during predict, and needs to be in the same format as during fit.

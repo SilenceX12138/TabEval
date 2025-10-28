@@ -4,7 +4,7 @@ from typing import Any, List, Optional, Tuple, Type
 # third party
 import numpy as np
 import torch
-from pydantic import validate_arguments
+from pydantic import validate_call
 from torch import nn
 
 # tabeval absolute
@@ -52,7 +52,7 @@ def _get_out_features(self: nn.Module) -> int:
     raise ValueError("No linear layer found in the model.")
 
 
-@validate_arguments(config=dict(arbitrary_types_allowed=True))
+@validate_call(config=dict(arbitrary_types_allowed=True))
 def _forward_skip_connection(
     self: nn.Module, X: torch.Tensor, *args: Any, **kwargs: Any
 ) -> torch.Tensor:
@@ -119,7 +119,7 @@ class MultiActivationHead(nn.Module):
             self.activations.append(activation)
             self.activation_lengths.append(length)
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def forward(self, X: torch.Tensor) -> torch.Tensor:
         if X.shape[-1] != np.sum(self.activation_lengths):
             raise RuntimeError(
@@ -142,7 +142,7 @@ class Sparsemax(nn.Module):
         super(Sparsemax, self).__init__()
         self.dim = dim
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def forward(self, input: torch.Tensor) -> torch.Tensor:
         return SparsemaxFunction.apply(input, self.dim)
 
@@ -152,6 +152,6 @@ class Entmax(nn.Module):
         super(Entmax, self).__init__()
         self.dim = dim
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def forward(self, input: torch.Tensor) -> torch.Tensor:
         return EntmaxFunction.apply(input, self.dim)

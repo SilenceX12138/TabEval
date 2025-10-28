@@ -20,8 +20,19 @@ from tabeval.logger import debug, info, warning
 
 # tabeval relative
 from .modules import DiffusionModel
-from .utils import (discretized_gaussian_log_likelihood, index_to_log_onehot, log_1_min_a, log_add_exp, log_categorical,
-                    mean_flat, normal_kl, ohe_to_categories, perm_and_expand, sliced_logsumexp, sum_except_batch)
+from .utils import (
+    discretized_gaussian_log_likelihood,
+    index_to_log_onehot,
+    log_1_min_a,
+    log_add_exp,
+    log_categorical,
+    mean_flat,
+    normal_kl,
+    ohe_to_categories,
+    perm_and_expand,
+    sliced_logsumexp,
+    sum_except_batch,
+)
 
 
 def get_beta_schedule(schedule_name: str, num_diffusion_timesteps: int) -> np.ndarray:
@@ -158,7 +169,7 @@ class GaussianMultinomialDiffusion(torch.nn.Module):
         )
 
         self.posterior_mean_coef1 = (
-            ((betas * np.sqrt(alphas_cumprod_prev) / (1.0 - alphas_cumprod)))
+            (betas * np.sqrt(alphas_cumprod_prev) / (1.0 - alphas_cumprod))
             .float()
             .to(device)
         )

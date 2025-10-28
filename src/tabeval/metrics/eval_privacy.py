@@ -6,11 +6,10 @@ from typing import Any, Dict
 
 # third party
 # tabeval absolute
-from pydantic import validate_arguments
+from pydantic import validate_call
 from sdmetrics.single_table import DCRBaselineProtection
 
 # tabeval absolute
-from tabeval.metrics.core import MetricEvaluator
 from tabeval.plugins.core.dataloader import DataLoader
 from tabeval.utils.reproducibility import clear_cache
 from tabeval.utils.serialization import load_from_file, save_to_file
@@ -42,7 +41,7 @@ class PrivacyEvaluator(MetricEvaluator):
     def _evaluate(self, X_gt: DataLoader, X_syn: DataLoader, **kwargs) -> Dict:
         raise NotImplementedError("Subclasses must implement this evaluation method")
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def evaluate(self, X_gt: DataLoader, X_syn: DataLoader, **kwargs) -> Dict:
         # Create hashable representation of kwargs
         cache_file = (
@@ -57,7 +56,7 @@ class PrivacyEvaluator(MetricEvaluator):
         save_to_file(cache_file, results)
         return results
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def evaluate_default(
         self,
         X_gt: DataLoader,
@@ -87,7 +86,12 @@ class PrivacyEvaluator(MetricEvaluator):
             return tuple(self._make_hashable(item) for item in obj)
         elif isinstance(obj, set):
             # Sort set items to ensure consistent ordering
-            return tuple(sorted([self._make_hashable(item) for item in obj], key=lambda x: (str(type(x)), str(x))))
+            return tuple(
+                sorted(
+                    [self._make_hashable(item) for item in obj],
+                    key=lambda x: (str(type(x)), str(x)),
+                )
+            )
         elif isinstance(obj, dict):
             # Sort by string representation of key type and then key value
             # This ensures consistent ordering even with mixed key types
@@ -138,22 +142,35 @@ class DCR(PrivacyEvaluator):
         return "maximize"
 
     def timestamp(self):
-        return "2025-08-09"
+        return "2025-09-11"
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def _evaluate(
         self,
         X: DataLoader,
         X_syn: DataLoader,
         metadata: dict,
         fast_mode: bool,
+        max_num_samples: int | None = None,
     ) -> Dict:
+        # === Set parameters for sub-sampling ===
+        if fast_mode or max_num_samples is not None:
+            num_rows_subsample = min(X.dataframe().shape[0], X_syn.dataframe().shape[0])
+            # Apply max_num_samples if provided
+            if max_num_samples is not None:
+                num_rows_subsample = min(max_num_samples, num_rows_subsample)
+            # If fast_mode is enabled, limit to 1000 rows
+            if fast_mode:
+                num_rows_subsample = min(1000, num_rows_subsample)
+        else:
+            num_rows_subsample = None
 
+        # === Compute the metric ===
         metric_dict = DCRBaselineProtection.compute_breakdown(
             real_data=X.dataframe(),
             synthetic_data=X_syn.dataframe(),
             metadata=metadata,
-            num_rows_subsample=min(1000, X.dataframe().shape[0], X_syn.dataframe().shape[0]) if fast_mode else None,
+            num_rows_subsample=num_rows_subsample,
             num_iterations=1,
         )
 

@@ -1,6 +1,7 @@
 """
 Code was adapted from https://github.com/Yura52/rtdl
 """
+
 # stdlib
 import math
 from typing import Optional, Union
@@ -8,10 +9,9 @@ from typing import Optional, Union
 # third party
 import torch
 import torch.optim
-from torch import Tensor, nn
-
 # tabeval absolute
 from tabeval.plugins.core.models.factory import get_model, get_nonlin
+from torch import Tensor, nn
 
 
 class TimeStepEmbedding(nn.Module):

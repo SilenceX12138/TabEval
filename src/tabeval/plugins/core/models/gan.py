@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 import torch
 from opacus import PrivacyEngine
-from pydantic import validate_arguments
+from pydantic import validate_call
 from torch import nn
 from torch.utils.data import DataLoader, TensorDataset, sampler
 from tqdm import tqdm
@@ -115,7 +115,7 @@ class GAN(nn.Module):
              if True uses noise generation approach robust to floating point arithmetic attacks.
     """
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def __init__(
         self,
         n_features: int,
@@ -294,7 +294,7 @@ class GAN(nn.Module):
         with torch.no_grad():
             return self(count, condt).detach().cpu().numpy()
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def forward(
         self,
         count: int,

@@ -1,6 +1,5 @@
 # stdlib
 import importlib.util
-import platform
 import sys
 from abc import ABCMeta, abstractmethod
 from importlib.abc import Loader
@@ -9,7 +8,7 @@ from typing import Any, Callable, Dict, Generator, List, Optional, Type, Union
 
 # third party
 import pandas as pd
-from pydantic import ConfigDict, validate_arguments
+from pydantic import ConfigDict, validate_call
 
 # tabeval absolute
 import tabeval.logger as log
@@ -23,7 +22,6 @@ from tabeval.plugins.core.schema import Schema
 from tabeval.plugins.core.serializable import Serializable
 from tabeval.utils.constants import DEVICE
 from tabeval.utils.reproducibility import enable_reproducible_results
-from tabeval.utils.serialization import load_from_file, save_to_file
 
 PLUGIN_NAME_NOT_SET: str = "plugin_name_not_set"
 PLUGIN_TYPE_NOT_SET: str = "plugin_type_not_set"
@@ -67,7 +65,7 @@ class Plugin(Serializable, metaclass=ABCMeta):
     def __init__(
         self,
         sampling_patience: int = 500,
-        strict: bool = True,
+        strict: bool = False,
         device: Any = DEVICE,
         random_state: int = 0,
         workspace: Path = Path("logs/tabeval_workspace"),
@@ -157,7 +155,7 @@ class Plugin(Serializable, metaclass=ABCMeta):
         """The Fully-Qualified name of the plugin."""
         return cls.type() + "." + cls.name()
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def fit(self, X: Union[DataLoader, pd.DataFrame], *args: Any, **kwargs: Any) -> Any:
         """Training method the synthetic data plugin.
 
@@ -260,7 +258,7 @@ class Plugin(Serializable, metaclass=ABCMeta):
         """
         ...
 
-    @validate_arguments
+    @validate_call
     def generate(
         self,
         count: Optional[int] = None,
@@ -351,11 +349,14 @@ class Plugin(Serializable, metaclass=ABCMeta):
         # The dataset is decompressed here, we can use the public schema
         gen_constraints = self.schema().as_constraints()
         if constraints is not None:
+            # If strict, we extend the existing constraints
             if self.strict:
                 gen_constraints = gen_constraints.extend(constraints)
+            # If not strict (default), we only use the manually specified constraints
             else:
                 gen_constraints = constraints
         else:
+            # If not strict (default), we allow more flexibility
             if not self.strict:
                 gen_constraints = Constraints()
 
@@ -389,7 +390,7 @@ class Plugin(Serializable, metaclass=ABCMeta):
         """
         ...
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def _safe_generate(self, gen_cbk: Callable, count: int, syn_schema: Schema, **kwargs: Any) -> DataLoader:
         constraints = syn_schema.as_constraints()
 
@@ -409,7 +410,9 @@ class Plugin(Serializable, metaclass=ABCMeta):
             iter_samples_df = self.training_schema().adapt_dtypes(iter_samples_df)
 
             iter_samples_df = constraints.match(iter_samples_df)
-            iter_samples_df = iter_samples_df.drop_duplicates()
+
+            if self.strict:
+                iter_samples_df = iter_samples_df.drop_duplicates()
 
             data_synth = pd.concat([data_synth, iter_samples_df], ignore_index=True)
 
@@ -420,7 +423,7 @@ class Plugin(Serializable, metaclass=ABCMeta):
 
         return create_from_info(data_synth, self.data_info)
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def _safe_generate_time_series(
         self, gen_cbk: Callable, count: int, syn_schema: Schema, **kwargs: Any
     ) -> DataLoader:
@@ -476,13 +479,13 @@ class Plugin(Serializable, metaclass=ABCMeta):
         data_synth = self.training_schema().adapt_dtypes(data_synth)
         return create_from_info(data_synth, data_info)
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def _safe_generate_images(self, gen_cbk: Callable, count: int, syn_schema: Schema, **kwargs: Any) -> DataLoader:
         data_synth = gen_cbk(count, **kwargs)
 
         return create_from_info(data_synth, self.data_info)
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def schema_includes(self, other: Union[DataLoader, pd.DataFrame]) -> bool:
         """Helper method to test if the reference schema includes a Dataset
 
@@ -511,7 +514,7 @@ class Plugin(Serializable, metaclass=ABCMeta):
 
         return self._training_schema
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def plot(
         self,
         plt: Any,
@@ -547,7 +550,7 @@ class PluginLoader:
     Used to load the plugins from the current folder.
     """
 
-    @validate_arguments
+    @validate_call
     def __init__(self, plugins: list, expected_type: Type, categories: list) -> None:
         global PLUGIN_CATEGORY_REGISTRY
         PLUGIN_CATEGORY_REGISTRY = {cat: [] for cat in categories}
@@ -566,7 +569,7 @@ class PluginLoader:
         self._plugins: Dict[str, Type[Plugin]] = PLUGIN_REGISTRY
         self._categories: Dict[str, List[str]] = PLUGIN_CATEGORY_REGISTRY
 
-    @validate_arguments
+    @validate_call
     def _load_single_plugin_impl(self, plugin_name: str) -> Optional[Type]:
         """Helper for loading a single plugin implementation"""
         plugin = Path(plugin_name)
@@ -609,7 +612,7 @@ class PluginLoader:
 
         return cls
 
-    @validate_arguments
+    @validate_call
     def _load_single_plugin(self, plugin_name: str) -> bool:
         """Helper for loading a single plugin"""
         cls = self._load_single_plugin_impl(plugin_name)
@@ -647,8 +650,6 @@ class PluginLoader:
 
     def add(self, name: str, cls: Type) -> "PluginLoader":
         """Add a new plugin"""
-        global PLUGIN_REGISTRY
-        global PLUGIN_CATEGORY_REGISTRY
         self._refresh()
         if name in self._plugins:
             log.info(f"Plugin {name} already exists. Overwriting")
@@ -663,12 +664,12 @@ class PluginLoader:
         PLUGIN_REGISTRY[name] = cls
         return self
 
-    @validate_arguments
+    @validate_call
     def load(self, buff: bytes) -> Any:
         """Load serialized plugin"""
         return Plugin.load(buff)
 
-    @validate_arguments
+    @validate_call
     def get(self, name: str, *args: Any, **kwargs: Any) -> Any:
         """Create a new object from a plugin.
         Args:
@@ -690,7 +691,7 @@ class PluginLoader:
 
         return self._plugins[name](*args, **kwargs)
 
-    @validate_arguments
+    @validate_call
     def get_type(self, name: str) -> Type:
         """Get the class type of a plugin.
         Args:
@@ -721,7 +722,7 @@ class PluginLoader:
         """The number of available plugins."""
         return len(self.list())
 
-    @validate_arguments
+    @validate_call
     def __getitem__(self, key: str) -> Any:
         return self.get(key)
 

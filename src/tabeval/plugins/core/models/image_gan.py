@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 from opacus import PrivacyEngine
-from pydantic import validate_arguments
+from pydantic import validate_call
 from torch import nn
 from torch.utils.data import DataLoader, sampler
 from tqdm import tqdm
@@ -112,7 +112,7 @@ class ImageGAN(nn.Module):
              if True uses noise generation approach robust to floating point arithmetic attacks.
     """
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def __init__(
         self,
         image_generator: nn.Module,
@@ -255,7 +255,7 @@ class ImageGAN(nn.Module):
         with torch.no_grad():
             return self(count, cond=cond).detach()
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def forward(
         self,
         count: int,

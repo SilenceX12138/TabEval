@@ -433,7 +433,10 @@ class FeatTransformer(torch.nn.Module):
         else:
             spec_input_dim = input_dim if is_first else output_dim
             self.specifics = GLU_Block(
-                spec_input_dim, output_dim, first=is_first, **params  # type: ignore
+                spec_input_dim,
+                output_dim,
+                first=is_first,
+                **params,  # type: ignore
             )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:

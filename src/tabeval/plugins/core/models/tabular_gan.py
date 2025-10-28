@@ -5,7 +5,7 @@ from typing import Any, Callable, Optional, Union
 import numpy as np
 import pandas as pd
 import torch
-from pydantic import validate_arguments
+from pydantic import validate_call
 from scipy.optimize import minimize
 from scipy.special import logsumexp
 from sklearn.preprocessing import OneHotEncoder
@@ -121,7 +121,7 @@ class TabularGAN(torch.nn.Module):
             Ignore columns from encoding
     """
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def __init__(
         self,
         X: pd.DataFrame,
@@ -312,18 +312,18 @@ class TabularGAN(torch.nn.Module):
             dp_secure_mode=dp_secure_mode,
         )
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def encode(self, X: pd.DataFrame) -> pd.DataFrame:
         return self.encoder.transform(X)
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def decode(self, X: pd.DataFrame) -> pd.DataFrame:
         return self.encoder.inverse_transform(X)
 
     def get_encoder(self) -> TabularEncoder:
         return self.encoder
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def fit(
         self,
         X: pd.DataFrame,
@@ -381,7 +381,7 @@ class TabularGAN(torch.nn.Module):
         else:
             self.sample_prob = None
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def generate(
         self,
         count: int,

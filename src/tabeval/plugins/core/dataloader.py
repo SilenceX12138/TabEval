@@ -9,7 +9,7 @@ import numpy.ma as ma
 import pandas as pd
 import PIL
 import torch
-from pydantic import validate_arguments
+from pydantic import validate_call
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 from torchvision import transforms
@@ -96,11 +96,11 @@ class DataLoader(metaclass=ABCMeta):
 
     @abstractmethod
     def unpack(self, as_numpy: bool = False, pad: bool = False) -> Any:
-        ...
+        pass
 
     @abstractmethod
     def decorate(self, data: Any) -> "DataLoader":
-        ...
+        pass
 
     def type(self) -> str:
         return self.data_type
@@ -108,20 +108,20 @@ class DataLoader(metaclass=ABCMeta):
     @property
     @abstractmethod
     def shape(self) -> tuple:
-        ...
+        pass
 
     @property
     @abstractmethod
     def columns(self) -> list:
-        ...
+        pass
 
     @abstractmethod
     def dataframe(self) -> pd.DataFrame:
-        ...
+        pass
 
     @abstractmethod
     def numpy(self) -> np.ndarray:
-        ...
+        pass
 
     @property
     def values(self) -> np.ndarray:
@@ -129,48 +129,48 @@ class DataLoader(metaclass=ABCMeta):
 
     @abstractmethod
     def info(self) -> dict:
-        ...
+        pass
 
     @abstractmethod
     def __len__(self) -> int:
-        ...
+        pass
 
     @abstractmethod
     def satisfies(self, constraints: Constraints) -> bool:
-        ...
+        pass
 
     @abstractmethod
     def match(self, constraints: Constraints) -> "DataLoader":
-        ...
+        pass
 
     @staticmethod
     @abstractmethod
     def from_info(data: pd.DataFrame, info: dict) -> "DataLoader":
-        ...
+        pass
 
     @abstractmethod
     def sample(self, count: int, random_state: int = 0) -> "DataLoader":
-        ...
+        pass
 
     @abstractmethod
     def drop(self, columns: list = []) -> "DataLoader":
-        ...
+        pass
 
     @abstractmethod
     def __getitem__(self, feature: Union[str, list]) -> Any:
-        ...
+        pass
 
     @abstractmethod
     def __setitem__(self, feature: str, val: Any) -> None:
-        ...
+        pass
 
     @abstractmethod
     def train(self) -> "DataLoader":
-        ...
+        pass
 
     @abstractmethod
     def test(self) -> "DataLoader":
-        ...
+        pass
 
     def hash(self) -> str:
         return dataframe_hash(self.dataframe())
@@ -183,11 +183,11 @@ class DataLoader(metaclass=ABCMeta):
 
     @abstractmethod
     def fillna(self, value: Any) -> "DataLoader":
-        ...
+        pass
 
     @abstractmethod
     def compression_protected_features(self) -> list:
-        ...
+        pass
 
     def domain(self) -> Optional[str]:
         return None
@@ -195,9 +195,7 @@ class DataLoader(metaclass=ABCMeta):
     def compress(
         self,
     ) -> Tuple["DataLoader", Dict]:
-        to_compress = self.data.copy().drop(
-            columns=self.compression_protected_features()
-        )
+        to_compress = self.data.copy().drop(columns=self.compression_protected_features())
         compressed, context = compress_dataset(to_compress)
         for protected_col in self.compression_protected_features():
             compressed[protected_col] = self.data[protected_col]
@@ -230,10 +228,7 @@ class DataLoader(metaclass=ABCMeta):
                 ):
                     continue
 
-                if (
-                    encoded[col].infer_objects().dtype.kind in ["O", "b"]
-                    or len(encoded[col].unique()) < 15
-                ):
+                if encoded[col].infer_objects().dtype.kind in ["O", "b"] or len(encoded[col].unique()) < 15:
                     encoder = LabelEncoder().fit(encoded[col])
                     encoded[col] = encoder.transform(encoded[col])
                     encoders[col] = encoder
@@ -261,11 +256,11 @@ class DataLoader(metaclass=ABCMeta):
 
     @abstractmethod
     def is_tabular(self) -> bool:
-        ...
+        pass
 
     @abstractmethod
     def get_fairness_column(self) -> Union[str, Any]:
-        ...
+        pass
 
 
 class GenericDataLoader(DataLoader):
@@ -301,7 +296,7 @@ class GenericDataLoader(DataLoader):
         >>> loader = GenericDataLoader(X, target_column="target", sensitive_columns=["sex"],)
     """
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def __init__(
         self,
         data: Union[pd.DataFrame, list, np.ndarray],
@@ -502,7 +497,7 @@ class SurvivalAnalysisDataLoader(DataLoader):
         >>> TODO
     """
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def __init__(
         self,
         data: pd.DataFrame,
@@ -520,9 +515,7 @@ class SurvivalAnalysisDataLoader(DataLoader):
             raise ValueError(f"Event column {target_column} not found in the dataframe")
 
         if time_to_event_column not in data.columns:
-            raise ValueError(
-                f"Time to event column {time_to_event_column} not found in the dataframe"
-            )
+            raise ValueError(f"Time to event column {time_to_event_column} not found in the dataframe")
 
         T = data[time_to_event_column]
         data_filtered = data[T > 0]
@@ -662,9 +655,7 @@ class SurvivalAnalysisDataLoader(DataLoader):
 
     def train(self) -> "DataLoader":
         stratify = self.data[self.target_column]
-        train_data, _ = train_test_split(
-            self.data, train_size=self.train_size, random_state=0, stratify=stratify
-        )
+        train_data, _ = train_test_split(self.data, train_size=self.train_size, random_state=0, stratify=stratify)
         return self.decorate(
             train_data.reset_index(drop=True),
         )
@@ -718,7 +709,7 @@ class TimeSeriesDataLoader(DataLoader):
         >>> TODO
     """
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def __init__(
         self,
         temporal_data: List[pd.DataFrame],
@@ -828,8 +819,7 @@ class TimeSeriesDataLoader(DataLoader):
             "static_features": self.static_features,
             "temporal_features": self.temporal_features,
             "outcome_features": self.outcome_features,
-            "outcome_len": len(self.data["outcome"].values.reshape(-1))
-            / len(self.data["outcome"]),
+            "outcome_len": len(self.data["outcome"].values.reshape(-1)) / len(self.data["outcome"]),
             "window_len": self.window_len,
             "sensitive_features": self.sensitive_features,
             "important_features": self.important_features,
@@ -931,15 +921,11 @@ class TimeSeriesDataLoader(DataLoader):
 
         if as_numpy:
             longest_observation_seq = max([len(seq) for seq in temporal_data])
-            padded_temporal_data = np.zeros(
-                (len(temporal_data), longest_observation_seq, 5)
-            )
+            padded_temporal_data = np.zeros((len(temporal_data), longest_observation_seq, 5))
             mask = np.ones((len(temporal_data), longest_observation_seq, 5), dtype=bool)
             for i, arr in enumerate(temporal_data):
                 padded_temporal_data[i, : arr.shape[0], :] = arr  # Copy the actual data
-                mask[
-                    i, : arr.shape[0], :
-                ] = False  # Set mask to False where actual data is present
+                mask[i, : arr.shape[0], :] = False  # Set mask to False where actual data is present
 
             masked_temporal_data = ma.masked_array(padded_temporal_data, mask)
             return (
@@ -1014,9 +1000,7 @@ class TimeSeriesDataLoader(DataLoader):
                 self.data[key] = self.data[key].fillna(value)
 
         for idx, item in enumerate(self.data["temporal_data"]):
-            self.data["temporal_data"][idx] = self.data["temporal_data"][idx].fillna(
-                value
-            )
+            self.data["temporal_data"][idx] = self.data["temporal_data"][idx].fillna(value)
 
         return self
 
@@ -1029,7 +1013,7 @@ class TimeSeriesDataLoader(DataLoader):
 
     # Padding helpers
     @staticmethod
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def pad_raw_features(
         static_data: Optional[pd.DataFrame],
         temporal_data: List[pd.DataFrame],
@@ -1055,7 +1039,7 @@ class TimeSeriesDataLoader(DataLoader):
         return static_data, temporal_data, observation_times, outcome
 
     @staticmethod
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def pad_raw_data(
         static_data: Optional[pd.DataFrame],
         temporal_data: List[pd.DataFrame],
@@ -1069,17 +1053,13 @@ class TimeSeriesDataLoader(DataLoader):
             temporal_data,
             observation_times,
             outcome,
-        ) = TimeSeriesDataLoader.pad_raw_features(
-            static_data, temporal_data, observation_times, outcome
-        )
+        ) = TimeSeriesDataLoader.pad_raw_features(static_data, temporal_data, observation_times, outcome)
         max_window_len = max([len(t) for t in temporal_data])
         temporal_features = TimeSeriesDataLoader.unique_temporal_features(temporal_data)
 
         for idx, item in enumerate(temporal_data):
             if len(item) != max_window_len:
-                pads = fill * np.ones(
-                    (max_window_len - len(item), len(temporal_features))
-                )
+                pads = fill * np.ones((max_window_len - len(item), len(temporal_features)))
                 start = 0
                 if len(item.index) > 0:
                     start = max(item.index) + 1
@@ -1092,9 +1072,7 @@ class TimeSeriesDataLoader(DataLoader):
 
             # handle missing time points
             if list(item.columns) != list(temporal_features):
-                raise RuntimeError(
-                    f"Invalid features {item.columns}. Expected {temporal_features}"
-                )
+                raise RuntimeError(f"Invalid features {item.columns}. Expected {temporal_features}")
             if len(item) != max_window_len:
                 raise RuntimeError("Invalid window len")
 
@@ -1131,7 +1109,7 @@ class TimeSeriesDataLoader(DataLoader):
         return temporal_features, mask_features
 
     @staticmethod
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def mask_temporal_data(
         temporal_data: List[pd.DataFrame],
         observation_times: List,
@@ -1160,16 +1138,14 @@ class TimeSeriesDataLoader(DataLoader):
         return temporal_data, observation_times
 
     @staticmethod
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def unmask_temporal_data(
         temporal_data: List[pd.DataFrame],
         observation_times: List,
         fill: Any = np.nan,
     ) -> Any:
         temporal_features = TimeSeriesDataLoader.unique_temporal_features(temporal_data)
-        temporal_features, mask_features = TimeSeriesDataLoader.extract_masked_features(
-            temporal_features
-        )
+        temporal_features, mask_features = TimeSeriesDataLoader.extract_masked_features(temporal_features)
 
         missing_horizons = []
         for idx, item in enumerate(temporal_data):
@@ -1197,7 +1173,7 @@ class TimeSeriesDataLoader(DataLoader):
         return temporal_data, observation_times_unmasked
 
     @staticmethod
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def pad_and_mask(
         static_data: Optional[pd.DataFrame],
         temporal_data: List[pd.DataFrame],
@@ -1261,16 +1237,9 @@ class TimeSeriesDataLoader(DataLoader):
         raw_outcome_features = list(outcome.columns)
         outcome_features = [f"seq_out_{col}" for col in raw_outcome_features]
 
-        raw_temporal_features = TimeSeriesDataLoader.unique_temporal_features(
-            temporal_data
-        )
+        raw_temporal_features = TimeSeriesDataLoader.unique_temporal_features(temporal_data)
         temporal_features = [f"seq_temporal_{col}" for col in raw_temporal_features]
-        cols = (
-            [id_col, time_id_col]
-            + static_features
-            + temporal_features
-            + outcome_features
-        )
+        cols = [id_col, time_id_col] + static_features + temporal_features + outcome_features
 
         seq = []
         for sidx, static_item in static_data.iterrows():
@@ -1301,7 +1270,7 @@ class TimeSeriesDataLoader(DataLoader):
         return seq_df, info
 
     @staticmethod
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def pack_raw_data(
         static_data: Optional[pd.DataFrame],
         temporal_data: List[pd.DataFrame],
@@ -1312,12 +1281,8 @@ class TimeSeriesDataLoader(DataLoader):
     ) -> pd.DataFrame:
         # Temporal data: (subjects, temporal_sequence, temporal_feature)
         temporal_features = TimeSeriesDataLoader.unique_temporal_features(temporal_data)
-        temporal_features, mask_features = TimeSeriesDataLoader.extract_masked_features(
-            temporal_features
-        )
-        temporal_data, observation_times = TimeSeriesDataLoader.unmask_temporal_data(
-            temporal_data, observation_times
-        )
+        temporal_features, mask_features = TimeSeriesDataLoader.extract_masked_features(temporal_features)
+        temporal_data, observation_times = TimeSeriesDataLoader.unmask_temporal_data(temporal_data, observation_times)
         seq_df, info = TimeSeriesDataLoader.sequential_view(
             static_data=static_data,
             temporal_data=temporal_data,
@@ -1329,13 +1294,11 @@ class TimeSeriesDataLoader(DataLoader):
         return static_data, temporal_data, observation_times, outcome, seq_df, info
 
     @staticmethod
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def unpack_raw_data(
         data: pd.DataFrame,
         info: dict,
-    ) -> Tuple[
-        Optional[pd.DataFrame], List[pd.DataFrame], List, Optional[pd.DataFrame]
-    ]:
+    ) -> Tuple[Optional[pd.DataFrame], List[pd.DataFrame], List, Optional[pd.DataFrame]]:
         id_col = info["seq_id_feature"]
         time_col = info["seq_time_id_feature"]
 
@@ -1359,9 +1322,7 @@ class TimeSeriesDataLoader(DataLoader):
             item_data = data[data[id_col] == item_id]
 
             static_data.append(item_data[static_cols].head(1).values.squeeze().tolist())
-            outcome_data.append(
-                item_data[outcome_cols].head(1).values.squeeze().tolist()
-            )
+            outcome_data.append(item_data[outcome_cols].head(1).values.squeeze().tolist())
             local_temporal_data = item_data[temporal_cols].copy()
             local_observation_times = item_data[time_col].values.tolist()
             local_temporal_data.columns = new_temporal_cols
@@ -1411,7 +1372,7 @@ class TimeSeriesSurvivalDataLoader(TimeSeriesDataLoader):
 
     """
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def __init__(
         self,
         temporal_data: List[pd.DataFrame],
@@ -1469,13 +1430,9 @@ class TimeSeriesSurvivalDataLoader(TimeSeriesDataLoader):
     def decorate(self, data: Any) -> "DataLoader":
         static_data, temporal_data, observation_times, outcome = data
         if self.time_to_event_col not in outcome:
-            raise ValueError(
-                f"Survival outcome is missing tte column {self.time_to_event_col}"
-            )
+            raise ValueError(f"Survival outcome is missing tte column {self.time_to_event_col}")
         if self.event_col not in outcome:
-            raise ValueError(
-                f"Survival outcome is missing event column {self.event_col}"
-            )
+            raise ValueError(f"Survival outcome is missing event column {self.event_col}")
 
         return TimeSeriesSurvivalDataLoader(
             temporal_data,
@@ -1612,7 +1569,7 @@ class ImageDataLoader(DataLoader):
 
     """
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def __init__(
         self,
         data: Union[torch.utils.data.Dataset, Tuple[torch.Tensor, torch.Tensor]],
@@ -1665,7 +1622,8 @@ class ImageDataLoader(DataLoader):
 
     def get_fairness_column(self) -> None:
         """Not implemented for ImageDataLoader"""
-        ...
+
+    pass
 
     def unpack(self, as_numpy: bool = False, pad: bool = False) -> Any:
         return self.data
@@ -1797,10 +1755,8 @@ class ImageDataLoader(DataLoader):
         raise NotImplementedError()
 
 
-@validate_arguments(config=dict(arbitrary_types_allowed=True))
-def create_from_info(
-    data: Union[pd.DataFrame, torch.utils.data.Dataset], info: dict
-) -> "DataLoader":
+@validate_call(config=dict(arbitrary_types_allowed=True))
+def create_from_info(data: Union[pd.DataFrame, torch.utils.data.Dataset], info: dict) -> "DataLoader":
     """Helper for creating a DataLoader from existing information."""
     if info["data_type"] == "generic":
         return GenericDataLoader.from_info(data, info)

@@ -4,20 +4,24 @@ from typing import Any, Callable, List, Optional, Tuple
 # third party
 import numpy as np
 import torch
-from pydantic import validate_arguments
+from pydantic import validate_call
 from torch import nn
 from torch.utils.data import DataLoader, TensorDataset
 
 # tabeval absolute
 import tabeval.logger as log
 from tabeval.plugins.core.models.factory import get_nonlin
-from tabeval.plugins.core.models.layers import GumbelSoftmax, MultiActivationHead, SkipConnection
+from tabeval.plugins.core.models.layers import (
+    GumbelSoftmax,
+    MultiActivationHead,
+    SkipConnection,
+)
 from tabeval.utils.constants import DEVICE
 from tabeval.utils.reproducibility import enable_reproducible_results
 
 
 class LinearLayer(nn.Module):
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def __init__(
         self,
         n_units_in: int,
@@ -44,7 +48,7 @@ class LinearLayer(nn.Module):
 
         self.model = nn.Sequential(*layers).to(self.device)
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def forward(self, X: torch.Tensor) -> torch.Tensor:
         return self.model(X.float()).to(self.device)
 
@@ -104,7 +108,7 @@ class MLP(nn.Module):
         Optional Custom loss function. If None, the loss is CrossEntropy for classification tasks, or RMSE for regression.
     """
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def __init__(
         self,
         n_units_in: int,
@@ -237,7 +241,7 @@ class MLP(nn.Module):
 
         return self
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def predict_proba(self, X: np.ndarray) -> np.ndarray:
         if self.task_type != "classification":
             raise ValueError(f"Invalid task type for predict_proba {self.task_type}")
@@ -249,7 +253,7 @@ class MLP(nn.Module):
 
             return yt.cpu().numpy().squeeze()
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def predict(self, X: np.ndarray) -> np.ndarray:
         with torch.no_grad():
             Xt = self._check_tensor(X)
@@ -268,7 +272,7 @@ class MLP(nn.Module):
         else:
             return np.mean(np.inner(y - y_pred, y - y_pred) / 2.0)
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def forward(self, X: torch.Tensor) -> torch.Tensor:
         return self.model(X.float())
 

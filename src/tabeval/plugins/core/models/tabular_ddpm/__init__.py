@@ -7,24 +7,22 @@ from typing import Any, Optional, Sequence
 import numpy as np
 import pandas as pd
 import torch
-from pydantic import validate_arguments
-from torch import nn
-from torch.utils.data import DataLoader, TensorDataset
-from tqdm import trange
-
+from pydantic import validate_call
 # tabeval absolute
 from tabeval.logger import info
 from tabeval.metrics.weighted_metrics import WeightedMetrics
 from tabeval.utils.callbacks import Callback, ValidationMixin
 from tabeval.utils.constants import DEVICE
-from tabeval.utils.dataframe import discrete_columns
+from torch import nn
+from torch.utils.data import DataLoader, TensorDataset
+from tqdm import trange
 
 # tabeval relative
 from .gaussian_multinomial_diffsuion import GaussianMultinomialDiffusion
 
 
 class TabDDPM(nn.Module, ValidationMixin):
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def __init__(
         self,
         n_iter: int = 1000,
@@ -84,7 +82,6 @@ class TabDDPM(nn.Module, ValidationMixin):
     def fit(
         self, X: pd.DataFrame, cond: Optional[pd.Series] = None, **kwargs: Any
     ) -> "TabDDPM":
-
         X = self._set_val_data(X)
 
         self.on_fit_begin()

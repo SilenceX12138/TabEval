@@ -5,7 +5,7 @@ from typing import Any, List, Tuple
 import numpy as np
 import pandas as pd
 import torch
-from pydantic import validate_arguments
+from pydantic import validate_call
 
 # tabeval absolute
 from tabeval.utils.constants import DEVICE
@@ -90,7 +90,7 @@ class TimeSeriesTabularVAE(torch.nn.Module):
                 - "XCM"
     """
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def __init__(
         self,
         static_data: pd.DataFrame,
@@ -171,7 +171,7 @@ class TimeSeriesTabularVAE(torch.nn.Module):
             loss_factor=loss_factor,
         )
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def encode(
         self,
         static_data: pd.DataFrame,
@@ -180,7 +180,7 @@ class TimeSeriesTabularVAE(torch.nn.Module):
     ) -> Tuple:
         return self.encoder.transform(static_data, temporal_data, observation_times)
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def decode(
         self,
         static_data: pd.DataFrame,
@@ -191,28 +191,28 @@ class TimeSeriesTabularVAE(torch.nn.Module):
             static_data, temporal_data, observation_times
         )
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def encode_static(
         self,
         static_data: pd.DataFrame,
     ) -> Tuple:
         return self.encoder.transform_static(static_data)
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def decode_static(
         self,
         static_data: pd.DataFrame,
     ) -> Tuple:
         return self.encoder.inverse_transform_static(static_data)
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def encode_horizons(
         self,
         observation_times: List,
     ) -> Tuple:
         return self.encoder.transform_observation_times(observation_times)
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def decode_horizons(
         self,
         observation_times: List,
@@ -222,7 +222,7 @@ class TimeSeriesTabularVAE(torch.nn.Module):
     def get_encoder(self) -> TimeSeriesTabularEncoder:
         return self.encoder
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def fit(
         self,
         static_data: pd.DataFrame,
@@ -266,6 +266,6 @@ class TimeSeriesTabularVAE(torch.nn.Module):
 
         return self.decode(static_data, temporal_data, observation_times.tolist())
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def forward(self, count: int) -> torch.Tensor:
         return self.model.forward(count)

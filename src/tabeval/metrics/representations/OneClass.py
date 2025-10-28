@@ -3,30 +3,25 @@
 
 # third party
 import numpy as np
-import torch
-import torch.nn as nn
-from torch.autograd import Variable
-
 # tabeval absolute
 import tabeval.logger as log
+import torch
+import torch.nn as nn
 from tabeval.metrics.representations.networks import build_network
+from torch.autograd import Variable
 
 # One-class loss functions
 # ------------------------
 
 
 def OneClassLoss(outputs: torch.Tensor, c: torch.Tensor) -> torch.Tensor:
-
     dist = torch.sum((outputs - c) ** 2, dim=1)
     loss = torch.mean(dist)
 
     return loss
 
 
-def SoftBoundaryLoss(
-    outputs: torch.Tensor, R: torch.Tensor, c: torch.Tensor, nu: torch.Tensor
-) -> torch.Tensor:
-
+def SoftBoundaryLoss(outputs: torch.Tensor, R: torch.Tensor, c: torch.Tensor, nu: torch.Tensor) -> torch.Tensor:
     dist = torch.sum((outputs - c) ** 2, dim=1)
     scores = dist - R**2
     loss = R**2 + (1 / nu) * torch.mean(torch.max(torch.zeros_like(scores), scores))
@@ -42,15 +37,12 @@ def SoftBoundaryLoss(
 
 
 class BaseNet(nn.Module):
-
     """Base class for all neural networks."""
 
     def __init__(self) -> None:
-
         super().__init__()
 
     def forward(self, X: torch.Tensor) -> torch.Tensor:
-
         """Forward pass logic
 
         :return: Network output
@@ -59,7 +51,6 @@ class BaseNet(nn.Module):
 
 
 def get_radius(dist: torch.Tensor, nu: float) -> np.ndarray:
-
     """Optimally solve for radius R via the (1-nu)-quantile of distances."""
 
     return np.quantile(np.sqrt(dist.clone().data.float().cpu().numpy()), 1 - nu)
@@ -84,7 +75,6 @@ class OneClassLayer(BaseNet):
         Radius: float = 1,
         nu: float = 1e-2,
     ):
-
         super().__init__()
 
         self.rep_dim = rep_dim
@@ -128,13 +118,11 @@ class OneClassLayer(BaseNet):
         self.loss_fn = SoftBoundaryLoss
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-
         x = self.model(x)
 
         return x
 
     def fit(self, x_train: torch.Tensor) -> None:
-
         self.optimizer = torch.optim.AdamW(
             self.model.parameters(),
             lr=self.learningRate,
@@ -148,12 +136,13 @@ class OneClassLayer(BaseNet):
                 x_train[int(self.train_prop * len(x_train)) :],
             )
             inputs_val = Variable(torch.from_numpy(x_val).to(self.device)).float()
+        else:
+            inputs_val = None
 
         self.losses = []
         self.loss_vals = []
 
         for epoch in range(self.epochs):
-
             # Converting inputs and labels to Variable
 
             inputs = Variable(torch.from_numpy(x_train)).to(self.device).float()
@@ -180,23 +169,16 @@ class OneClassLayer(BaseNet):
 
             if self.train_prop != 1.0:
                 with torch.no_grad():
-
                     # get output from the model, given the inputs
                     outputs = self.model(inputs_val)
 
                     # get loss for the predicted output
 
-                    loss_val = self.loss_fn(
-                        outputs=outputs, R=self.R, c=self.c, nu=self.nu
-                    )
+                    loss_val = self.loss_fn(outputs=outputs, R=self.R, c=self.c, nu=self.nu)
 
                     self.loss_vals.append(loss_val)
 
             if self.train_prop == 1:
                 log.debug("epoch {}, loss {}".format(epoch, self.loss.item()))
             else:
-                log.debug(
-                    "epoch {:4}, train loss {:.4e}, val loss {:.4e}".format(
-                        epoch, self.loss.item(), loss_val
-                    )
-                )
+                log.debug("epoch {:4}, train loss {:.4e}, val loss {:.4e}".format(epoch, self.loss.item(), loss_val))

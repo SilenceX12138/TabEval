@@ -3,8 +3,9 @@ from typing import Any, List
 
 # third party
 import pandas as pd
+
 # Necessary packages
-from pydantic import validate_arguments
+from pydantic import validate_call
 
 # tabeval absolute
 from tabeval.plugins.core.dataloader import DataLoader
@@ -36,7 +37,7 @@ class SCMPlugin(Plugin):
 
     """
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def __init__(self, cd_method: str, **kwargs: Any) -> None:
         super().__init__(**kwargs)
 
@@ -71,7 +72,9 @@ class SCMPlugin(Plugin):
             cd_method=self.cd_method,
             # Encoding the target column for regression tasks generally leads to poorer performance
             encoder_whitelist=(
-                X.dataframe().columns[:-1] if kwargs["task_type"] == "classification" else X.dataframe().columns
+                X.dataframe().columns[:-1]
+                if kwargs["task_type"] == "classification"
+                else X.dataframe().columns
             ),
         )
 

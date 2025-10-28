@@ -3,7 +3,7 @@ from typing import Dict, List, Optional, Tuple
 
 # third party
 import pandas as pd
-from pydantic import validate_arguments
+from pydantic import validate_call
 from sklearn.preprocessing import LabelEncoder
 
 # tabeval absolute
@@ -19,7 +19,7 @@ class DatasetAnonymization:
     An equivalence class is said to have t-closeness if the distance between the distribution of a sensitive attribute in this class and the distribution of the attribute in the whole table is no more than a threshold t. A table is said to have t-closeness if all equivalence classes have t-closeness.
     For that, we measure the Kolmogorov-Smirnov distance between the empirical probability distribution of the sensitive attribute over the entire dataset vs. the distribution over the partition."""
 
-    @validate_arguments
+    @validate_call
     def __init__(
         self,
         k_threshold: int = 10,
@@ -47,7 +47,7 @@ class DatasetAnonymization:
         self.categorical_limit = categorical_limit
         self.max_partitions = max_partitions
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def is_anonymous(self, X: pd.DataFrame, sensitive_features: List[str] = []) -> bool:
         """True if the dataset is valid according to the k-anonymity criteria, False otherwise."""
         evaluator = kAnonymization()
@@ -77,7 +77,7 @@ class DatasetAnonymization:
 
         return X
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def anonymize(
         self,
         X: pd.DataFrame,
@@ -87,7 +87,7 @@ class DatasetAnonymization:
 
         return X
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def anonymize_columns(
         self,
         X: pd.DataFrame,
@@ -98,7 +98,7 @@ class DatasetAnonymization:
 
         return X
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def anonymize_column(
         self,
         X: pd.DataFrame,
@@ -169,7 +169,7 @@ class DatasetAnonymization:
 
         return self._tear_down(result, encoders)
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def _get_features(
         self, X: pd.DataFrame, sensitive_features: List[str] = []
     ) -> List:
@@ -181,7 +181,7 @@ class DatasetAnonymization:
 
         return features
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def _get_spans(
         self, X: pd.DataFrame, partition: pd.Index, scale: Optional[Dict] = None
     ) -> Dict:
@@ -197,7 +197,7 @@ class DatasetAnonymization:
             spans[column] = span
         return spans
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def _split(
         self, X: pd.DataFrame, partition: pd.Index, column: str, categoricals: list
     ) -> Tuple:
@@ -216,7 +216,7 @@ class DatasetAnonymization:
             dfr = Xpart.index[Xpart >= median]
             return (dfl, dfr)
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def _get_categoricals(self, X: pd.DataFrame) -> List:
         categoricals = []
         for column in X.columns:
@@ -225,7 +225,7 @@ class DatasetAnonymization:
 
         return categoricals
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def _partition_dataset(
         self,
         X: pd.DataFrame,
@@ -257,7 +257,7 @@ class DatasetAnonymization:
                 finished_partitions.append(partition)
         return finished_partitions
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def _get_frequencies(self, X: pd.DataFrame, sensitive_column: str) -> Dict:
         freq = {}
         total_count = float(len(X))
@@ -268,17 +268,17 @@ class DatasetAnonymization:
 
         return freq
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def _is_k_anonymous(self, X: pd.DataFrame) -> bool:
         """True if the partition is valid according to the k-Anonymity criteria, False otherwise."""
         return len(X) >= self.k_threshold
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def _is_l_diverse(self, X: pd.DataFrame, sensitive_column: str) -> bool:
         """True if the partition is valid according to the l-Diversity criteria, False otherwise."""
         return len(X[sensitive_column].unique()) >= self.l_diversity
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def _t_closeness(self, X: pd.DataFrame, column: str, freqs: Dict) -> float:
         cnt = float(len(X))
         d_max = -1.0
@@ -290,7 +290,7 @@ class DatasetAnonymization:
                 d_max = d
         return d_max
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def _is_t_close(
         self,
         X: pd.DataFrame,
@@ -304,7 +304,7 @@ class DatasetAnonymization:
 
         return self._t_closeness(X, sensitive_column, frequencies) <= self.t_threshold
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def _is_partition_anonymous(
         self,
         X: pd.DataFrame,

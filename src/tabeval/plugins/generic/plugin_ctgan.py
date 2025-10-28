@@ -9,15 +9,20 @@ from typing import Any, List, Optional, Union
 # third party
 import numpy as np
 import pandas as pd
+
 # Necessary packages
-from pydantic import validate_arguments
+from pydantic import validate_call
 from torch.utils.data import sampler
 
 # tabeval absolute
 from tabeval.metrics.weighted_metrics import WeightedMetrics
 from tabeval.plugins.core.dataloader import DataLoader
-from tabeval.plugins.core.distribution import (CategoricalDistribution, Distribution, FloatDistribution,
-                                               IntegerDistribution)
+from tabeval.plugins.core.distribution import (
+    CategoricalDistribution,
+    Distribution,
+    FloatDistribution,
+    IntegerDistribution,
+)
 from tabeval.plugins.core.models.tabular_gan import TabularGAN
 from tabeval.plugins.core.plugin import Plugin
 from tabeval.plugins.core.schema import Schema
@@ -97,7 +102,7 @@ class CTGANPlugin(Plugin):
 
     """
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def __init__(
         self,
         n_iter: int = 2000,
@@ -131,7 +136,7 @@ class CTGANPlugin(Plugin):
         workspace: Path = Path("logs/tabeval_workspace"),
         compress_dataset: bool = False,
         sampling_patience: int = 500,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         super().__init__(
             device=device,
@@ -139,7 +144,7 @@ class CTGANPlugin(Plugin):
             sampling_patience=sampling_patience,
             workspace=workspace,
             compress_dataset=compress_dataset,
-            **kwargs
+            **kwargs,
         )
         if patience_metric is None:
             patience_metric = WeightedMetrics(

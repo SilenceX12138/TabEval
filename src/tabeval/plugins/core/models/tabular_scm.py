@@ -1,23 +1,21 @@
 # stdlib
 from abc import ABCMeta
-from typing import Any, Union
+from typing import Any
 
 # third party
 import lingam
 import networkx as nx
 import numpy as np
 import pandas as pd
-import torch
 from causallearn.search.FCMBased import lingam as cl_lingam
-from pydantic import validate_arguments
+from pydantic import validate_call
 
 # tabeval relative
 from .tabular_encoder import TabularEncoder
 
 
 class TabularSCM(metaclass=ABCMeta):
-
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def __init__(
         self,
         cd_method: str,
@@ -38,17 +36,19 @@ class TabularSCM(metaclass=ABCMeta):
             case "lim":
                 self.model = lingam.LiM()
 
-        self.encoder = TabularEncoder(max_clusters=encoder_max_clusters, whitelist=encoder_whitelist)
+        self.encoder = TabularEncoder(
+            max_clusters=encoder_max_clusters, whitelist=encoder_whitelist
+        )
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def encode(self, X: pd.DataFrame) -> pd.DataFrame:
         return self.encoder.transform(X)
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def decode(self, X: pd.DataFrame) -> pd.DataFrame:
         return self.encoder.inverse_transform(X)
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def fit(
         self,
         X: pd.DataFrame,
@@ -83,7 +83,7 @@ class TabularSCM(metaclass=ABCMeta):
 
         return self
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def infer_causal_order(
         self,
     ) -> list:
@@ -93,14 +93,16 @@ class TabularSCM(metaclass=ABCMeta):
 
         return causal_order
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def generate(
         self,
         count: int,
     ) -> pd.DataFrame:
         samples = np.zeros((count, self.num_nodes))
         for feature in self.causal_order:
-            samples[:, feature] = self.adjacency_matrix[feature, :].dot(samples.T) + np.random.uniform(size=count)
+            samples[:, feature] = self.adjacency_matrix[feature, :].dot(
+                samples.T
+            ) + np.random.uniform(size=count)
 
         # Using self.columns to ensure the correct dtypes of the columns
         return self.decode(pd.DataFrame(samples, columns=self.columns))

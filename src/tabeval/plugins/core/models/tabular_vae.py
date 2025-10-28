@@ -5,7 +5,7 @@ from typing import Any, Optional, Union
 import numpy as np
 import pandas as pd
 import torch
-from pydantic import validate_arguments
+from pydantic import validate_call
 from sklearn.preprocessing import OneHotEncoder
 from torch import nn
 
@@ -78,7 +78,7 @@ class TabularVAE(nn.Module):
             Max number of iterations without any improvement before early stopping is trigged.
     """
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def __init__(
         self,
         X: pd.DataFrame,
@@ -233,18 +233,18 @@ class TabularVAE(nn.Module):
             patience=patience,
         )
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def encode(self, X: pd.DataFrame) -> pd.DataFrame:
         return self.encoder.transform(X)
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def decode(self, X: pd.DataFrame) -> pd.DataFrame:
         return self.encoder.inverse_transform(X)
 
     def get_encoder(self) -> TabularEncoder:
         return self.encoder
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def fit(
         self,
         X: pd.DataFrame,
@@ -272,7 +272,7 @@ class TabularVAE(nn.Module):
         self.model.fit(X_enc, cond, **kwargs)
         return self
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def generate(
         self,
         count: int,
@@ -282,7 +282,7 @@ class TabularVAE(nn.Module):
         samples = self(count, cond)
         return self.decode(pd.DataFrame(samples))
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def forward(
         self,
         count: int,
