@@ -11,6 +11,10 @@ echo -e "${BLUE}Removing insider files...${NC}"
 echo -e "${YELLOW}Cleaning .github/workflows/ directory...${NC}"
 find .github/workflows/ -type f ! -name "*.yaml" -exec git rm --cached -r {} \;
 
+# Remove dependabot configuration
+echo -e "${YELLOW}Removing dependabot configuration...${NC}"
+git rm --cached -r .github/dependabot.yml
+
 # Remove VSCode configuration
 echo -e "${YELLOW}Removing .vscode directory...${NC}"
 git rm --cached -r .vscode
