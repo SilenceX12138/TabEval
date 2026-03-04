@@ -143,7 +143,7 @@ class LowOrderMetrics(DensityEvaluator):
         return "maximize"
 
     def timestamp(self):
-        return "2025-08-09"
+        return "2026-02-01"
 
     @validate_call(config=dict(arbitrary_types_allowed=True))
     def _evaluate(
