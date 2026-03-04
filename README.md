@@ -1,4 +1,4 @@
-# TabEval: A Comprehensive Evaluation Framework for Tabular Synthetic Data Generation
+# TabEval: A Comprehensive Evaluation Toolkit for Tabular Synthetic Data Generation
 
 [![PyPI version](https://badge.fury.io/py/tabeval.svg)](https://badge.fury.io/py/tabeval)
 ![Last Commit](https://img.shields.io/github/last-commit/SilenceX12138/TabEval)
@@ -6,7 +6,7 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![Downloads](https://static.pepy.tech/badge/tabeval)](https://pypi.org/project/tabeval/)
 
-TabEval is a comprehensive Python framework for evaluating synthetic tabular data generation methods. It provides a unified interface for benchmarking various synthetic data generation algorithms across multiple evaluation dimensions including density estimation, privacy preservation, machine learning efficacy, and structural fidelity.
+TabEval is a comprehensive Python toolkit for evaluating synthetic tabular data generation methods. It provides a unified interface for benchmarking various synthetic data generation algorithms across multiple evaluation dimensions including density estimation, privacy preservation, machine learning efficacy, and structural fidelity.
 
 ## 🎯 Key Features
 
@@ -28,7 +28,7 @@ If you use TabEval in your research, please cite:
 
 ```bibtex
 @misc{tabeval,
-  title = {TabEval: A Comprehensive Evaluation Framework for Tabular Synthetic Data Generation},
+  title = {TabEval: A Comprehensive Evaluation Toolkit for Tabular Synthetic Data Generation},
   author = {Xiangjian Jiang},
   year = {2025},
   howpublished = {\url{https://github.com/SilenceX12138/TabEval}},
@@ -37,4 +37,4 @@ If you use TabEval in your research, please cite:
 
 ## 🙏 Acknowledgments
 
-TabEval builds upon the work of many researchers and open-source projects in the synthetic data generation community. We thank all contributors and the broader research community for their valuable work. In particular, this project builds upon and extends the excellent work from [Synthcity](https://github.com/vanderschaarlab/synthcity). We acknowledge their foundational contributions to the synthetic data generation ecosystem and have adapted their framework to focus specifically on comprehensive evaluation methodologies.
+TabEval builds upon the work of many researchers and open-source projects in the synthetic data generation community. We thank all contributors and the broader research community for their valuable work. In particular, this project builds upon and extends the excellent work from [SDMetrics](https://github.com/sdv-dev/SDMetrics) and [Synthcity](https://github.com/vanderschaarlab/synthcity). We acknowledge their foundational contributions to the synthetic data generation ecosystem and have adapted their framework to focus specifically on comprehensive evaluation methodologies.
