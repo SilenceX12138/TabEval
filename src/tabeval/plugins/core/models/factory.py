@@ -15,18 +15,8 @@ from tsai.models.XceptionTime import XceptionTime
 from tsai.models.XCM import XCM
 
 # tabeval relative
-from .feature_encoder import (
-    BayesianGMMEncoder,
-    DatetimeEncoder,
-    FeatureEncoder,
-    GaussianQuantileTransformer,
-    LabelEncoder,
-    MinMaxScaler,
-    OneHotEncoder,
-    OrdinalEncoder,
-    RobustScaler,
-    StandardScaler,
-)
+from .feature_encoder import (BayesianGMMEncoder, DatetimeEncoder, FeatureEncoder, GaussianQuantileTransformer,
+                              LabelEncoder, MinMaxScaler, OneHotEncoder, OrdinalEncoder, RobustScaler, StandardScaler)
 from .layers import GumbelSoftmax
 
 MODELS = dict(
