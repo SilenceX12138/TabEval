@@ -22,7 +22,7 @@ license = {file = "LICENSE"}
 name = "tabeval"
 readme = "README.md"
 requires-python = ">=3.10"
-version = "2026.03.04"
+version = "2026.10.08"
 
 dependencies = [
   "hatchling",
@@ -68,6 +68,7 @@ dependencies = [
   "build",
   "tabpfn",
   "nrgboost",
+  "sdmetrics",
   # peft version is a hard dependency for GReaT
   "peft==0.9.0",
 ]

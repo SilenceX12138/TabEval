@@ -13,6 +13,7 @@ from autogluon.core.models import AbstractModel
 from autogluon.features.generators import LabelEncoderFeatureGenerator
 from autogluon.tabular import TabularPredictor
 from pydantic import validate_call
+from tqdm import tqdm
 
 # tabeval absolute
 from tabeval.metrics.core import MetricEvaluator
@@ -145,7 +146,7 @@ class UtilityPerFeature(StructureEvaluator):
         return "maximize"
 
     def timestamp(self):
-        return "2025-08-09"
+        return "2026-03-27"
 
     @validate_call(config=dict(arbitrary_types_allowed=True))
     def _evaluate(
@@ -154,6 +155,7 @@ class UtilityPerFeature(StructureEvaluator):
         X_syn: DataLoader,
         column_list: list,  # list of column names (the last one is default to be the target)
         time_limit: int,  # limit for total training time (second)
+        custom_hyperparameters: dict = {},  # custom hyperparameters for the predictors
     ) -> Dict:
         # === Prepare the data ===
         X = pd.DataFrame(X.data, columns=column_list)
@@ -161,15 +163,15 @@ class UtilityPerFeature(StructureEvaluator):
 
         # === Prepare predictors ===
         # Only keep some default models
-        custom_hyperparameters = {}
-        custom_hyperparameters["XGB"] = {}
-        custom_hyperparameters["KNN"] = {}
-        custom_hyperparameters[CustomTabPFNModel] = {}
+        if custom_hyperparameters == {}:
+            custom_hyperparameters["XGB"] = {}
+            custom_hyperparameters["KNN"] = {}
+            custom_hyperparameters[CustomTabPFNModel] = {}
 
         # === Enumerate all features ===
         target2regression_score_mean = {}  # negative RMSE
         target2classification_score_mean = {}  # balanced accuracy
-        for col in column_list:
+        for col in tqdm(column_list):
             if X_syn_df[col].nunique() == 1:
                 # Skip constant columns
                 target2classification_score_mean[col] = [1]
@@ -198,17 +200,11 @@ class UtilityPerFeature(StructureEvaluator):
             # e.g., run 1 trained an XGB model on dataset A, and run 2 trained another XGB model on dataset B
             # Then run 1 may evaluate the XGB from run 2, thus leading to crashed runs
             if predictor.problem_type == "regression":
-                leaderboard = predictor.leaderboard(
-                    X, extra_metrics=["root_mean_squared_error"]
-                )
+                leaderboard = predictor.leaderboard(X, extra_metrics=["root_mean_squared_error"])
                 target2regression_score_mean[col] = [leaderboard["score_test"].mean()]
             else:
-                leaderboard = predictor.leaderboard(
-                    X, extra_metrics=["balanced_accuracy"]
-                )
-                target2classification_score_mean[col] = [
-                    leaderboard["balanced_accuracy"].mean()
-                ]
+                leaderboard = predictor.leaderboard(X, extra_metrics=["balanced_accuracy"])
+                target2classification_score_mean[col] = [leaderboard["balanced_accuracy"].mean()]
 
         return {
             "negative_RMSE": target2regression_score_mean,
@@ -234,9 +230,7 @@ class CustomTabPFNModel(AbstractModel):
         if self._feature_generator.features_in:
             # This converts categorical features to numeric via stateful label encoding.
             X = X.copy()
-            X[self._feature_generator.features_in] = self._feature_generator.transform(
-                X=X
-            )
+            X[self._feature_generator.features_in] = self._feature_generator.transform(X=X)
         # Add a fillna call to handle missing values.
         # Some algorithms will be able to handle NaN values internally (LightGBM).
         # In those cases, you can simply pass the NaN values into the inner model.
@@ -274,9 +268,7 @@ class CustomTabPFNModel(AbstractModel):
             model_cls = TabPFNClassifier
             # Limit the number of classes to 10 for training.
             if len(y.unique()) > 10:
-                raise ValueError(
-                    "TabPFN only supports up to 10 classes. Please use a different model for this task."
-                )
+                raise ValueError("TabPFN only supports up to 10 classes. Please use a different model for this task.")
 
         # Make sure to call preprocess on X near the start of `_fit`.
         # This is necessary because the data is converted via preprocess during predict, and needs to be in the same format as during fit.
