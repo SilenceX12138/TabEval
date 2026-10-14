@@ -22,7 +22,7 @@ license = {file = "LICENSE"}
 name = "tabeval"
 readme = "README.md"
 requires-python = ">=3.10"
-version = "2026.10.08"
+version = "2026.10.15"
 
 dependencies = [
   "hatchling",

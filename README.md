@@ -1,4 +1,4 @@
-# TabEval: A Comprehensive Evaluation Toolkit for Tabular Synthetic Data Generation
+# TabEval: A Comprehensive Evaluation Framework for Tabular Synthetic Data Generation
 
 [![PyPI version](https://badge.fury.io/py/tabeval.svg)](https://badge.fury.io/py/tabeval)
 ![Last Commit](https://img.shields.io/github/last-commit/SilenceX12138/TabEval)
@@ -28,7 +28,7 @@ If you use TabEval in your research, please cite:
 
 ```bibtex
 @misc{tabeval,
-  title = {TabEval: A Comprehensive Evaluation Toolkit for Tabular Synthetic Data Generation},
+  title = {TabEval: A Comprehensive Evaluation Framework for Tabular Synthetic Data Generation},
   author = {Xiangjian Jiang},
   year = {2025},
   howpublished = {\url{https://github.com/SilenceX12138/TabEval}},
